@@ -1,7 +1,7 @@
 import { useTheme } from '@/hooks/use-theme';
 import { Tabs } from 'expo-router';
+import { Film, Heart, Search, Settings } from 'lucide-react-native';
 import React from 'react';
-import { Text } from 'react-native';
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -42,7 +42,7 @@ export default function TabLayout() {
           title: 'Discover',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: size + 2, color }}>🎬</Text>
+            <Film color={color} size={size} />
           ),
         }}
       />
@@ -52,7 +52,7 @@ export default function TabLayout() {
           title: 'Search',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: size + 2, color }}>🔍</Text>
+            <Search color={color} size={size} />
           ),
         }}
       />
@@ -62,7 +62,7 @@ export default function TabLayout() {
           title: 'Favourites',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: size + 2, color }}>❤️</Text>
+            <Heart color={color} size={size} />
           ),
         }}
       />
@@ -72,7 +72,7 @@ export default function TabLayout() {
           title: 'Settings',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: size + 2, color }}>⚙️</Text>
+            <Settings color={color} size={size} />
           ),
         }}
       />

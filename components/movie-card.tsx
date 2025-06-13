@@ -8,8 +8,7 @@ import { Dimensions, Image, Platform, TouchableOpacity } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 const horizontalPadding = 16; // Total horizontal padding from screen edges
-const cardSpacing = 12; // Space between cards
-const cardWidth = (screenWidth - (horizontalPadding * 2) - cardSpacing) / 2;
+const cardWidth = (screenWidth - (horizontalPadding * 2)) / 2 - 6; // Subtract small margin for spacing
 
 type Props = {
   movie: Movie;

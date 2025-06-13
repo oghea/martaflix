@@ -6,8 +6,7 @@ import { Dimensions, Platform } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 const horizontalPadding = 16; // Total horizontal padding from screen edges
-const cardSpacing = 12; // Space between cards
-const cardWidth = (screenWidth - (horizontalPadding * 2) - cardSpacing) / 2;
+const cardWidth = (screenWidth - (horizontalPadding * 2)) / 2 - 6; // Subtract small margin for spacing
 
 export function MovieSkeleton() {
   const { theme } = useTheme();
@@ -60,9 +59,10 @@ type Props = {
 export function MovieSkeletonList({ count = 6 }: Props) {
   return (
     <View 
-      className="flex-row flex-wrap"
       style={{ 
         paddingHorizontal: 16,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between'
       }}
     >

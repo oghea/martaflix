@@ -1,18 +1,18 @@
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { MovieCard } from '@/components/movie-card';
-import { MovieSkeletonList } from '@/components/movie-skeleton-list';
+import { MovieSkeletonList } from '@/components/movie-skeleton';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useSearchMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-    FlatList,
-    StatusBar,
-    Text,
-    TextInput,
-    View
+  FlatList,
+  StatusBar,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
