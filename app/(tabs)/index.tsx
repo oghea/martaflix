@@ -2,7 +2,6 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { MovieCard } from '@/components/movie-card';
 import { MovieSkeletonList } from '@/components/movie-skeleton';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Heading } from '@/components/ui/heading';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Spinner } from '@/components/ui/spinner';
@@ -74,33 +73,25 @@ export default function DiscoverScreen(): React.JSX.Element {
 
   const renderHeader = React.useCallback(() => (
     <View style={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 16 }}>
-      <View style={{ 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: 12 
-      }}>
-        <View style={{ flex: 1 }}>
-          <Heading 
-            size="2xl" 
-            style={{ 
-              marginBottom: 8, 
-              color: theme.colors.text.primary,
-              fontWeight: 'bold',
-              letterSpacing: -0.5
-            }}
-          >
-            Popular Movies
-          </Heading>
-          <Text style={{ 
-            color: theme.colors.text.secondary, 
-            fontSize: 16, 
-            fontWeight: '500' 
-          }}>
-            Discover the most popular movies right now
-          </Text>
-        </View>
-        <ThemeToggle />
+      <View style={{ marginBottom: 12 }}>
+        <Heading 
+          size="2xl" 
+          style={{ 
+            marginBottom: 8, 
+            color: theme.colors.text.primary,
+            fontWeight: 'bold',
+            letterSpacing: -0.5
+          }}
+        >
+          Popular Movies
+        </Heading>
+        <Text style={{ 
+          color: theme.colors.text.secondary, 
+          fontSize: 16, 
+          fontWeight: '500' 
+        }}>
+          Discover the most popular movies right now
+        </Text>
       </View>
     </View>
   ), [theme.colors.text.primary, theme.colors.text.secondary]);

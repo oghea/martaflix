@@ -13,9 +13,17 @@ export default function TabLayout() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 70,
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.text.tertiary,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
         headerStyle: {
           backgroundColor: theme.colors.surface,
           borderBottomColor: theme.colors.border,
@@ -34,7 +42,37 @@ export default function TabLayout() {
           title: 'Discover',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: size, color }}>🎬</Text>
+            <Text style={{ fontSize: size + 2, color }}>🎬</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: size + 2, color }}>🔍</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="favourites"
+        options={{
+          title: 'Favourites',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: size + 2, color }}>❤️</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: size + 2, color }}>⚙️</Text>
           ),
         }}
       />
