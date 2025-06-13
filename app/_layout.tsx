@@ -1,26 +1,63 @@
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
+import { useTheme } from '@/hooks/use-theme';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Image, SafeAreaView, Text } from 'react-native';
 import '../global.css';
 
-export default function _layout() {
-  return (
-    <GluestackUIProvider mode="light">
-      <SafeAreaView>
-        <Text className='text-red-500 text-2xl font-bold'>Hello1</Text>
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-        <Image
-          style={{
-            width: 100,
-            height: 100,
-          }}
-          source={{
-            uri: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-          }}
-          alt="image"
+function ThemedApp() {
+  const { theme, themeMode } = useTheme();
+
+  return (
+    <>
+      <StatusBar 
+        style={themeMode === 'dark' ? 'light' : 'dark'} 
+        backgroundColor={theme.colors.surface}
+      />
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+          headerTintColor: theme.colors.text.primary,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="movie/[id]" 
+          options={{ 
+            title: 'Movie Details',
+            headerStyle: {
+              backgroundColor: theme.colors.surface,
+            },
+            headerTintColor: theme.colors.text.primary,
+          }} 
         />
-      </SafeAreaView>
-    </GluestackUIProvider>
-    
-  )
+      </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <GluestackUIProvider mode="light">
+        <ThemedApp />
+      </GluestackUIProvider>
+    </QueryClientProvider>
+  );
 }
