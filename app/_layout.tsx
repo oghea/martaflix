@@ -1,9 +1,10 @@
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { useTheme } from '@/hooks/use-theme';
+import { useFavoritesStore } from '@/lib/favorites-store';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import '../global.css';
 
 // Create a client
@@ -18,6 +19,12 @@ const queryClient = new QueryClient({
 
 function ThemedApp() {
   const { theme, themeMode } = useTheme();
+  const { initializeFavorites } = useFavoritesStore();
+
+  // Initialize favorites store on app startup
+  useEffect(() => {
+    initializeFavorites();
+  }, [initializeFavorites]);
 
   return (
     <>

@@ -1,8 +1,10 @@
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
+import { useFavorites } from '@/hooks/use-favorites';
 import { useTheme } from '@/hooks/use-theme';
 import { getImageUrl, IMAGE_SIZES } from '@/lib/api-config';
 import type { Movie } from '@/types/movie';
+import { Heart } from 'lucide-react-native';
 import * as React from 'react';
 import { Dimensions, Image, Platform, TouchableOpacity } from 'react-native';
 
@@ -17,10 +19,17 @@ type Props = {
 
 export function MovieCard({ movie, onPress }: Props) {
   const { theme } = useTheme();
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const isMovieFavorite = isFavorite(movie.id);
   
   const handlePress = React.useCallback(() => {
     onPress(movie.id);
   }, [movie.id, onPress]);
+
+  const handleFavoritePress = React.useCallback((e: any) => {
+    e.stopPropagation(); // Prevent triggering the card press
+    toggleFavorite(movie);
+  }, [movie, toggleFavorite]);
 
   const formatRating = (rating: number): string => {
     return rating.toFixed(1);
@@ -89,6 +98,36 @@ export function MovieCard({ movie, onPress }: Props) {
             </Text>
           </View>
         )}
+        
+        {/* Favorite Button */}
+        <TouchableOpacity
+          onPress={handleFavoritePress}
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            backgroundColor: theme.mode === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)',
+            borderRadius: 20,
+            padding: 8,
+            ...Platform.select({
+              ios: {
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 3,
+              },
+              android: {
+                elevation: 6,
+              },
+            }),
+          }}
+        >
+          <Heart
+            size={18}
+            color={isMovieFavorite ? '#ef4444' : theme.colors.text.secondary}
+            fill={isMovieFavorite ? '#ef4444' : 'transparent'}
+          />
+        </TouchableOpacity>
         
         {/* Rating Badge */}
         <View 
