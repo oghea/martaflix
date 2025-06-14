@@ -26,8 +26,8 @@ export function MovieCard({ movie, onPress }: Props) {
     onPress(movie.id);
   }, [movie.id, onPress]);
 
-  const handleFavoritePress = React.useCallback((e: any) => {
-    e.stopPropagation(); // Prevent triggering the card press
+  const handleFavoritePress = React.useCallback((e?: any) => {
+    e?.stopPropagation(); // Prevent triggering the card press
     toggleFavorite(movie);
   }, [movie, toggleFavorite]);
 
@@ -41,6 +41,7 @@ export function MovieCard({ movie, onPress }: Props) {
 
   return (
     <TouchableOpacity 
+      testID={`movie-card-${movie.id}`}
       onPress={handlePress}
       style={{
         width: cardWidth,
@@ -68,6 +69,7 @@ export function MovieCard({ movie, onPress }: Props) {
       <View style={{ position: 'relative' }}>
         {imageUri ? (
           <Image
+            testID={`movie-poster-${movie.id}`}
             source={{ uri: imageUri }}
             style={{ 
               width: '100%', 
@@ -77,23 +79,29 @@ export function MovieCard({ movie, onPress }: Props) {
             resizeMode="cover"
           />
         ) : (
-          <View style={{ 
-            width: '100%', 
-            height: 140, 
-            backgroundColor: theme.colors.placeholder.background,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderWidth: 2,
-            borderColor: theme.colors.border,
-            borderStyle: 'dashed'
-          }}>
+          <View 
+            testID={`movie-poster-placeholder-${movie.id}`}
+            style={{ 
+              width: '100%', 
+              height: 140, 
+              backgroundColor: theme.colors.placeholder.background,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 2,
+              borderColor: theme.colors.border,
+              borderStyle: 'dashed'
+            }}
+          >
             <Text style={{ fontSize: 48, marginBottom: 8 }}>🎬</Text>
-            <Text style={{ 
-              fontSize: 12, 
-              color: theme.colors.placeholder.text, 
-              textAlign: 'center', 
-              fontWeight: '500' 
-            }}>
+            <Text 
+              testID={`movie-no-image-text-${movie.id}`}
+              style={{ 
+                fontSize: 12, 
+                color: theme.colors.placeholder.text, 
+                textAlign: 'center', 
+                fontWeight: '500' 
+              }}
+            >
               No Image
             </Text>
           </View>
@@ -101,6 +109,7 @@ export function MovieCard({ movie, onPress }: Props) {
         
         {/* Favorite Button */}
         <TouchableOpacity
+          testID={`favorite-button-${movie.id}`}
           onPress={handleFavoritePress}
           style={{
             position: 'absolute',
@@ -131,6 +140,7 @@ export function MovieCard({ movie, onPress }: Props) {
         
         {/* Rating Badge */}
         <View 
+          testID={`rating-badge-${movie.id}`}
           style={{
             position: 'absolute',
             top: 12,
@@ -152,11 +162,14 @@ export function MovieCard({ movie, onPress }: Props) {
             }),
           }}
         >
-          <Text style={{ 
-            color: theme.colors.rating.text, 
-            fontSize: 12, 
-            fontWeight: 'bold' 
-          }}>
+          <Text 
+            testID={`rating-text-${movie.id}`}
+            style={{ 
+              color: theme.colors.rating.text, 
+              fontSize: 12, 
+              fontWeight: 'bold' 
+            }}
+          >
             ⭐ {formatRating(movie.vote_average)}
           </Text>
         </View>
@@ -165,6 +178,7 @@ export function MovieCard({ movie, onPress }: Props) {
       {/* Movie Info */}
       <View style={{ padding: 16 }}>
         <Text 
+          testID={`movie-title-${movie.id}`}
           style={{ 
             fontSize: 18, 
             fontWeight: 'bold', 
@@ -177,33 +191,43 @@ export function MovieCard({ movie, onPress }: Props) {
           {movie.title}
         </Text>
         
-        <Text style={{ 
-          fontSize: 12, 
-          color: theme.colors.text.secondary, 
-          fontWeight: '500',
-          marginBottom: 8 
-        }}>
+        <Text 
+          testID={`movie-year-${movie.id}`}
+          style={{ 
+            fontSize: 12, 
+            color: theme.colors.text.secondary, 
+            fontWeight: '500',
+            marginBottom: 8 
+          }}
+        >
           📅 {movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown'}
         </Text>
         
-        <View style={{
-          backgroundColor: theme.colors.badge.background,
-          borderRadius: 20,
-          paddingHorizontal: 8,
-          paddingVertical: 4,
-          alignSelf: 'flex-start',
-          marginBottom: 12
-        }}>
-          <Text style={{ 
-            color: theme.colors.badge.text, 
-            fontSize: 12, 
-            fontWeight: '600' 
-          }}>
+        <View 
+          testID={`popular-badge-${movie.id}`}
+          style={{
+            backgroundColor: theme.colors.badge.background,
+            borderRadius: 20,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            alignSelf: 'flex-start',
+            marginBottom: 12
+          }}
+        >
+          <Text 
+            testID={`popular-text-${movie.id}`}
+            style={{ 
+              color: theme.colors.badge.text, 
+              fontSize: 12, 
+              fontWeight: '600' 
+            }}
+          >
             POPULAR
           </Text>
         </View>
         
         <Text 
+          testID={`movie-overview-${movie.id}`}
           style={{ 
             fontSize: 12, 
             color: theme.colors.text.tertiary, 

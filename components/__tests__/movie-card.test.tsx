@@ -111,85 +111,108 @@ describe('MovieCard', () => {
     it('should render movie title correctly', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      expect(screen.getByText('Test Movie')).toBeTruthy();
+      const titleElement = screen.getByTestId(`movie-title-${mockMovie.id}`);
+      expect(titleElement).toBeTruthy();
+      expect(titleElement.children[0]).toBe('Test Movie');
     });
 
     it('should render movie release year', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      expect(screen.getByText('📅 2023')).toBeTruthy();
+      const yearElement = screen.getByTestId(`movie-year-${mockMovie.id}`);
+      expect(yearElement).toBeTruthy();
+      // Check if the element contains the expected text parts
+      const textContent = yearElement.children.join('');
+      expect(textContent).toContain('📅');
+      expect(textContent).toContain('2023');
     });
 
     it('should render movie rating', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      expect(screen.getByText('⭐ 8.5')).toBeTruthy();
+      const ratingElement = screen.getByTestId(`rating-text-${mockMovie.id}`);
+      expect(ratingElement).toBeTruthy();
+      // Check if the element contains the expected text parts
+      const textContent = ratingElement.children.join('');
+      expect(textContent).toContain('⭐');
+      expect(textContent).toContain('8.5');
     });
 
-    it('should render movie overview truncated', () => {
+    it('should render movie overview', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      expect(screen.getByText(/This is a test movie/)).toBeTruthy();
+      const overviewElement = screen.getByTestId(`movie-overview-${mockMovie.id}`);
+      expect(overviewElement).toBeTruthy();
+      expect(overviewElement.children[0]).toMatch(/This is a test movie/);
     });
 
     it('should render "POPULAR" badge', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      expect(screen.getByText('POPULAR')).toBeTruthy();
+      const popularElement = screen.getByTestId(`popular-text-${mockMovie.id}`);
+      expect(popularElement).toBeTruthy();
+      expect(popularElement.children[0]).toBe('POPULAR');
     });
 
     it('should handle movie without release date', () => {
       const movieWithoutDate = { ...mockMovie, release_date: '' };
       render(<MovieCard movie={movieWithoutDate} onPress={mockOnPress} />);
       
-      expect(screen.getByText('📅 Unknown')).toBeTruthy();
+      const yearElement = screen.getByTestId(`movie-year-${movieWithoutDate.id}`);
+      const textContent = yearElement.children.join('');
+      expect(textContent).toContain('📅');
+      expect(textContent).toContain('Unknown');
     });
 
     it('should handle movie without poster', () => {
       const movieWithoutPoster = { ...mockMovie, poster_path: null };
       render(<MovieCard movie={movieWithoutPoster} onPress={mockOnPress} />);
       
-      expect(screen.getByText('🎬')).toBeTruthy();
-      expect(screen.getByText('No Image')).toBeTruthy();
+      expect(screen.getByTestId(`movie-poster-placeholder-${movieWithoutPoster.id}`)).toBeTruthy();
+      const noImageElement = screen.getByTestId(`movie-no-image-text-${movieWithoutPoster.id}`);
+      expect(noImageElement.children[0]).toBe('No Image');
+    });
+
+    it('should render movie poster when available', () => {
+      render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
+      
+      expect(screen.getByTestId(`movie-poster-${mockMovie.id}`)).toBeTruthy();
     });
   });
 
   describe('Favorite Functionality', () => {
-    it('should show heart icon when movie is not favorited', () => {
+    it('should render favorite button', () => {
       mockIsFavorite.mockReturnValue(false);
       
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      // Just verify the component renders without errors
-      expect(screen.getByText('Test Movie')).toBeTruthy();
+      expect(screen.getByTestId(`favorite-button-${mockMovie.id}`)).toBeTruthy();
     });
 
-    it('should show heart icon when movie is favorited', () => {
+    it('should render favorite button when movie is favorited', () => {
       mockIsFavorite.mockReturnValue(true);
       
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      // Just verify the component renders without errors
-      expect(screen.getByText('Test Movie')).toBeTruthy();
+      expect(screen.getByTestId(`favorite-button-${mockMovie.id}`)).toBeTruthy();
     });
 
-    it('should call toggleFavorite when heart area is pressed', () => {
-      const { getByText } = render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
+    it('should call toggleFavorite when favorite button is pressed', () => {
+      render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      // Since we can't easily find the TouchableOpacity, let's test the callback directly
-      // This tests the logic without relying on UI interaction
-      expect(mockToggleFavorite).not.toHaveBeenCalled();
+      const favoriteButton = screen.getByTestId(`favorite-button-${mockMovie.id}`);
+      fireEvent.press(favoriteButton);
       
-      // Verify the component renders correctly
-      expect(getByText('Test Movie')).toBeTruthy();
+      expect(mockToggleFavorite).toHaveBeenCalledWith(mockMovie);
     });
 
     it('should not call onPress when favorite button is pressed', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      // Test that the component renders and the mock is set up correctly
+      const favoriteButton = screen.getByTestId(`favorite-button-${mockMovie.id}`);
+      fireEvent.press(favoriteButton);
+      
       expect(mockOnPress).not.toHaveBeenCalled();
-      expect(screen.getByText('Test Movie')).toBeTruthy();
     });
   });
 
@@ -197,10 +220,8 @@ describe('MovieCard', () => {
     it('should call onPress with movie id when card is pressed', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      const movieCard = screen.getByText('Test Movie').parent?.parent;
-      if (movieCard) {
-        fireEvent.press(movieCard);
-      }
+      const movieCard = screen.getByTestId(`movie-card-${mockMovie.id}`);
+      fireEvent.press(movieCard);
       
       expect(mockOnPress).toHaveBeenCalledWith(mockMovie.id);
     });
@@ -209,14 +230,20 @@ describe('MovieCard', () => {
       const movieWithPreciseRating = { ...mockMovie, vote_average: 7.654321 };
       render(<MovieCard movie={movieWithPreciseRating} onPress={mockOnPress} />);
       
-      expect(screen.getByText('⭐ 7.7')).toBeTruthy();
+      const ratingElement = screen.getByTestId(`rating-text-${movieWithPreciseRating.id}`);
+      const textContent = ratingElement.children.join('');
+      expect(textContent).toContain('⭐');
+      expect(textContent).toContain('7.7');
     });
 
     it('should handle zero rating', () => {
       const movieWithZeroRating = { ...mockMovie, vote_average: 0 };
       render(<MovieCard movie={movieWithZeroRating} onPress={mockOnPress} />);
       
-      expect(screen.getByText('⭐ 0.0')).toBeTruthy();
+      const ratingElement = screen.getByTestId(`rating-text-${movieWithZeroRating.id}`);
+      const textContent = ratingElement.children.join('');
+      expect(textContent).toContain('⭐');
+      expect(textContent).toContain('0.0');
     });
   });
 
@@ -247,18 +274,20 @@ describe('MovieCard', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
       // Component should render without errors with dark theme
-      expect(screen.getByText('Test Movie')).toBeTruthy();
+      expect(screen.getByTestId(`movie-title-${mockMovie.id}`)).toBeTruthy();
     });
   });
 
   describe('Accessibility', () => {
-    it('should have accessible components', () => {
+    it('should have accessible components with proper test IDs', () => {
       render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
       
-      // Check that important elements are rendered
-      expect(screen.getByText('Test Movie')).toBeTruthy();
-      expect(screen.getByText('📅 2023')).toBeTruthy();
-      expect(screen.getByText('⭐ 8.5')).toBeTruthy();
+      // Check that important elements are rendered with test IDs
+      expect(screen.getByTestId(`movie-card-${mockMovie.id}`)).toBeTruthy();
+      expect(screen.getByTestId(`movie-title-${mockMovie.id}`)).toBeTruthy();
+      expect(screen.getByTestId(`movie-year-${mockMovie.id}`)).toBeTruthy();
+      expect(screen.getByTestId(`rating-text-${mockMovie.id}`)).toBeTruthy();
+      expect(screen.getByTestId(`favorite-button-${mockMovie.id}`)).toBeTruthy();
     });
   });
 
@@ -271,7 +300,8 @@ describe('MovieCard', () => {
       
       render(<MovieCard movie={movieWithLongTitle} onPress={mockOnPress} />);
       
-      expect(screen.getByText(/This is an extremely long movie title/)).toBeTruthy();
+      const titleElement = screen.getByTestId(`movie-title-${movieWithLongTitle.id}`);
+      expect(titleElement.children[0]).toMatch(/This is an extremely long movie title/);
     });
 
     it('should handle movie with no overview', () => {
@@ -279,7 +309,10 @@ describe('MovieCard', () => {
       
       render(<MovieCard movie={movieWithoutOverview} onPress={mockOnPress} />);
       
-      expect(screen.getByText('Test Movie')).toBeTruthy();
+      expect(screen.getByTestId(`movie-title-${movieWithoutOverview.id}`)).toBeTruthy();
+      const overviewElement = screen.getByTestId(`movie-overview-${movieWithoutOverview.id}`);
+      // Empty overview should have no children or empty string
+      expect(overviewElement.children.length === 0 || overviewElement.children[0] === '').toBe(true);
     });
 
     it('should handle very high rating', () => {
@@ -287,7 +320,10 @@ describe('MovieCard', () => {
       
       render(<MovieCard movie={movieWithHighRating} onPress={mockOnPress} />);
       
-      expect(screen.getByText('⭐ 10.0')).toBeTruthy();
+      const ratingElement = screen.getByTestId(`rating-text-${movieWithHighRating.id}`);
+      const textContent = ratingElement.children.join('');
+      expect(textContent).toContain('⭐');
+      expect(textContent).toContain('10.0');
     });
 
     it('should handle negative rating', () => {
@@ -295,7 +331,21 @@ describe('MovieCard', () => {
       
       render(<MovieCard movie={movieWithNegativeRating} onPress={mockOnPress} />);
       
-      expect(screen.getByText('⭐ -1.5')).toBeTruthy();
+      const ratingElement = screen.getByTestId(`rating-text-${movieWithNegativeRating.id}`);
+      const textContent = ratingElement.children.join('');
+      expect(textContent).toContain('⭐');
+      expect(textContent).toContain('-1.5');
+    });
+
+    it('should handle different movie IDs correctly', () => {
+      const movie2 = { ...mockMovie, id: 2, title: 'Another Movie' };
+      
+      render(<MovieCard movie={movie2} onPress={mockOnPress} />);
+      
+      expect(screen.getByTestId(`movie-card-${movie2.id}`)).toBeTruthy();
+      const titleElement = screen.getByTestId(`movie-title-${movie2.id}`);
+      expect(titleElement.children[0]).toBe('Another Movie');
+      expect(screen.getByTestId(`favorite-button-${movie2.id}`)).toBeTruthy();
     });
   });
-}); 
+});
