@@ -6,6 +6,7 @@ export const storage = new MMKV();
 // Storage keys
 export const STORAGE_KEYS = {
   FAVORITES: 'favorites',
+  THEME: 'theme',
 } as const;
 
 // Generic storage utilities

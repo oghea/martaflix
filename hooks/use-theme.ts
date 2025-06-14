@@ -6,15 +6,17 @@ export function useTheme(): {
   themeMode: ThemeMode;
   toggleTheme: () => void;
   setTheme: (mode: ThemeMode) => void;
+  setSystemTheme: () => void;
   isDarkMode: boolean;
 } {
-  const { theme, themeMode, toggleTheme, setTheme } = useThemeStore();
+  const { theme, themeMode, toggleTheme, setTheme, setSystemTheme } = useThemeStore();
   
   return {
     theme,
     themeMode,
     toggleTheme,
     setTheme,
+    setSystemTheme,
     isDarkMode: themeMode === 'dark',
   };
 } 

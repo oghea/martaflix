@@ -1,12 +1,23 @@
 import '@testing-library/react-native/extend-expect';
 
-// Mock AsyncStorage
+// Mock AsyncStorage (still needed for other dependencies)
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(() => Promise.resolve(null)),
   removeItem: jest.fn(() => Promise.resolve()),
   clear: jest.fn(() => Promise.resolve()),
   getAllKeys: jest.fn(() => Promise.resolve([])),
+}));
+
+// Mock MMKV
+jest.mock('react-native-mmkv', () => ({
+  MMKV: jest.fn().mockImplementation(() => ({
+    set: jest.fn(),
+    getString: jest.fn(),
+    delete: jest.fn(),
+    contains: jest.fn(),
+    clearAll: jest.fn(),
+  })),
 }));
 
 // Mock Lucide React Native
@@ -68,6 +79,8 @@ jest.mock('react-native-safe-area-context', () => {
     useSafeAreaInsets: () => inset,
   };
 });
+
+
 
 // Silence the warning about React.createRef
 global.console.warn = jest.fn();

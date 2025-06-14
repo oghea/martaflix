@@ -20,13 +20,13 @@ type SettingItemProps = {
   destructive?: boolean;
 };
 
-function SettingItem({ 
-  title, 
-  subtitle, 
-  onPress, 
-  rightComponent, 
-  showArrow = false,
-  destructive = false
+function SettingItem({
+  title,
+  subtitle,
+  onPress,
+  rightComponent,
+  showArrow = true,
+  destructive = false,
 }: SettingItemProps) {
   const { theme } = useTheme();
 
@@ -35,14 +35,15 @@ function SettingItem({
       onPress={onPress}
       style={{
         backgroundColor: theme.colors.surface,
-        padding: 16,
-        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
         marginBottom: 8,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
       }}
       disabled={!onPress}
     >
@@ -68,31 +69,28 @@ function SettingItem({
           </Text>
         )}
       </View>
-      
       {rightComponent && (
-        <View style={{ marginLeft: 16 }}>
+        <View style={{ marginLeft: 12 }}>
           {rightComponent}
         </View>
       )}
-      
-      {showArrow && (
-        <View style={{ marginLeft: 16 }}>
-          <Text
-            style={{
-              fontSize: 18,
-              color: theme.colors.text.tertiary,
-            }}
-          >
-            〉
-          </Text>
-        </View>
+      {showArrow && onPress && !rightComponent && (
+        <Text
+          style={{
+            fontSize: 16,
+            color: theme.colors.text.tertiary,
+            marginLeft: 12,
+          }}
+        >
+          →
+        </Text>
       )}
     </TouchableOpacity>
   );
 }
 
 export default function SettingsScreen() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setSystemTheme } = useTheme();
   const { favoritesCount, clearAllFavorites } = useFavorites();
 
   const handleClearFavorites = () => {
@@ -119,6 +117,26 @@ export default function SettingsScreen() {
           onPress: () => {
             clearAllFavorites();
             Alert.alert('Success', 'All favorites have been cleared.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUseSystemTheme = () => {
+    Alert.alert(
+      'Use System Theme',
+      'This will change the app theme to match your device\'s system theme setting.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Use System Theme',
+          onPress: () => {
+            setSystemTheme();
+            Alert.alert('Success', 'Theme updated to match system setting.');
           },
         },
       ]
@@ -171,7 +189,7 @@ export default function SettingsScreen() {
           </Text>
           
           <SettingItem
-            title="Theme"
+            title="Toggle Theme"
             subtitle={`Current: ${theme.mode === 'dark' ? 'Dark' : 'Light'} mode`}
             onPress={toggleTheme}
             rightComponent={
@@ -193,6 +211,21 @@ export default function SettingsScreen() {
                   {theme.mode === 'dark' ? '🌙' : '☀️'}
                 </Text>
               </View>
+            }
+          />
+
+          <SettingItem
+            title="Use System Theme"
+            subtitle="Match your device's theme setting"
+            onPress={handleUseSystemTheme}
+            rightComponent={
+              <Text
+                style={{
+                  fontSize: 16,
+                }}
+              >
+                📱
+              </Text>
             }
           />
 
