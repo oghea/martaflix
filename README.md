@@ -230,6 +230,7 @@ npm run test:coverage
 - **Testing**: Jest + React Native Testing Library
 - **API Client**: Axios
 - **Icons**: Lucide React Native
+- **Cursor**: Cursor rules to keep maintain the knowledge of the project
 
 ## 📱 Usage
 
