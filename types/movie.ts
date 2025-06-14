@@ -15,6 +15,77 @@ export type Movie = {
   video: boolean;
 };
 
+export type Genre = {
+  id: number;
+  name: string;
+};
+
+export type ProductionCompany = {
+  id: number;
+  logo_path: string | null;
+  name: string;
+  origin_country: string;
+};
+
+export type ProductionCountry = {
+  iso_3166_1: string;
+  name: string;
+};
+
+export type SpokenLanguage = {
+  english_name: string;
+  iso_639_1: string;
+  name: string;
+};
+
+export type MovieDetails = {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date: string;
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  adult: boolean;
+  original_language: string;
+  original_title: string;
+  video: boolean;
+  genres: Genre[];
+  homepage: string | null;
+  imdb_id: string | null;
+  production_companies: ProductionCompany[];
+  production_countries: ProductionCountry[];
+  runtime: number | null;
+  spoken_languages: SpokenLanguage[];
+  status: string;
+  tagline: string | null;
+  budget: number;
+  revenue: number;
+};
+
+export type CastMember = {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+  order: number;
+};
+
+export type CrewMember = {
+  id: number;
+  name: string;
+  job: string;
+  department: string;
+  profile_path: string | null;
+};
+
+export type MovieCredits = {
+  cast: CastMember[];
+  crew: CrewMember[];
+};
+
 export type MoviesResponse = {
   page: number;
   results: Movie[];

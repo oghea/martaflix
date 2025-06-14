@@ -47,11 +47,7 @@ function ThemedApp() {
         <Stack.Screen 
           name="movie/[id]" 
           options={{ 
-            title: 'Movie Details',
-            headerStyle: {
-              backgroundColor: theme.colors.surface,
-            },
-            headerTintColor: theme.colors.text.primary,
+            headerShown: false,
           }} 
         />
       </Stack>
