@@ -10,13 +10,16 @@ import { View } from '@/components/ui/view';
 import { useInfinitePopularMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
 import type { Movie } from '@/types/movie';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { FlatList, ListRenderItem } from 'react-native';
+import { FlatList, ListRenderItem, RefreshControl, StatusBar } from 'react-native';
 
 export default function DiscoverScreen(): React.JSX.Element {
   const router = useRouter();
   const { theme } = useTheme();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  
   const {
     data,
     isLoading,
@@ -41,6 +44,20 @@ export default function DiscoverScreen(): React.JSX.Element {
     refetch();
   }, [refetch]);
 
+  const handleRefresh = React.useCallback(async () => {
+    try {
+      // Trigger haptic feedback
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      setIsRefreshing(true);
+      await refetch();
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
+
   const handleLoadMore = React.useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -55,7 +72,7 @@ export default function DiscoverScreen(): React.JSX.Element {
   const renderFooter = React.useCallback(() => {
     if (isFetchingNextPage) {
       return (
-        <View className="py-8 items-center">
+        <View style={{ paddingVertical: 32, alignItems: 'center' }}>
           <Spinner size="small" />
           <Text style={{ 
             marginTop: 12, 
@@ -68,7 +85,7 @@ export default function DiscoverScreen(): React.JSX.Element {
         </View>
       );
     }
-    return <View className="pb-6" />;
+    return <View style={{ paddingBottom: 24 }} />;
   }, [isFetchingNextPage, theme.colors.text.secondary]);
 
   const renderHeader = React.useCallback(() => (
@@ -94,13 +111,31 @@ export default function DiscoverScreen(): React.JSX.Element {
         </Text>
       </View>
     </View>
-  ), [theme.colors.text.primary, theme.colors.text.secondary]);
+  ), [theme.colors.text.primary, theme.colors.text.secondary, theme.colors.text.tertiary, isRefreshing, isRefetching]);
+
+  // Enhanced refresh control
+  const refreshControl = React.useMemo(() => (
+    <RefreshControl
+      refreshing={isRefreshing || isRefetching}
+      onRefresh={handleRefresh}
+      colors={[theme.colors.primary]} // Android
+      tintColor={theme.colors.primary} // iOS
+      title="Pull to refresh"
+      titleColor={theme.colors.text.secondary}
+      progressBackgroundColor={theme.colors.surface}
+      progressViewOffset={0}
+    />
+  ), [isRefreshing, isRefetching, handleRefresh, theme.colors.primary, theme.colors.text.secondary, theme.colors.surface]);
 
   // Loading state
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <View className="flex-1">
+        <StatusBar
+          barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={theme.colors.background}
+        />
+        <View style={{ flex: 1 }}>
           {renderHeader()}
           <MovieSkeletonList count={6} />
         </View>
@@ -112,6 +147,10 @@ export default function DiscoverScreen(): React.JSX.Element {
   if (error) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <StatusBar
+          barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={theme.colors.background}
+        />
         {renderHeader()}
         <ErrorState
           error={error}
@@ -124,9 +163,13 @@ export default function DiscoverScreen(): React.JSX.Element {
   }
 
   // Empty state
-  if (!movies.length) {
+  if (!movies.length && !isRefreshing && !isRefetching) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <StatusBar
+          barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={theme.colors.background}
+        />
         {renderHeader()}
         <EmptyState />
       </SafeAreaView>
@@ -135,6 +178,10 @@ export default function DiscoverScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StatusBar
+        barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.colors.background}
+      />
       <FlatList
         data={movies}
         renderItem={renderMovie}
@@ -148,13 +195,18 @@ export default function DiscoverScreen(): React.JSX.Element {
         ListFooterComponent={renderFooter}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        refreshing={isRefetching}
-        onRefresh={refetch}
+        refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={null}
         columnWrapperStyle={{ 
           justifyContent: 'space-between',
         }}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        windowSize={10}
+        getItemLayout={undefined} // Let FlatList calculate for numColumns > 1
       />
     </SafeAreaView>
   );
