@@ -189,17 +189,17 @@ npm run test:coverage
 
 ## ⏱️ Time Spent
 
-**Total Estimated Time: ~25-30 hours**
+**Total Estimated Time: ~13 hours**
 
 ### Breakdown:
-- **Initial Setup & Configuration**: 3 hours
-- **API Integration & Types**: 4 hours
-- **Core Components Development**: 8 hours
+- **Initial Setup & Configuration**: 2 hours
+- **API Integration & Types**: 2 hours
+- **Core Components Development**: 1 hour
 - **Navigation & Routing**: 2 hours
-- **State Management Setup**: 3 hours
-- **UI/UX Polish & Theming**: 4 hours
-- **Testing Implementation**: 3 hours
-- **Documentation & Refinement**: 2-3 hours
+- **State Management Setup**: 1 hour
+- **UI/UX Polish & Theming**: 2 hours
+- **Testing Implementation**: 2 hours
+- **Documentation & Refinement**: 1 hour
 
 ## 📁 Folder Structure
 
