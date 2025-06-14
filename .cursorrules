@@ -122,6 +122,7 @@ export function Title({ text }: Props) {
 - Write unit tests for utilities and complex components
 - The test file should be named like the component file but with the .test.tsx extension (e.g., component-name.test.tsx)
 - Do not write unit tests for simple components that only show data
+- For the selector implement getById and give the test id to the components
 
 ## Git Usage
 
