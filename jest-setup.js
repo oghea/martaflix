@@ -20,6 +20,15 @@ jest.mock('react-native-mmkv', () => ({
   })),
 }));
 
+// Mock Gluestack UI components
+jest.mock('@gluestack-ui/pressable', () => ({
+  createPressable: jest.fn(() => ({ children }) => children),
+}));
+
+jest.mock('@gluestack-ui/nativewind-utils/tva', () => ({
+  tva: jest.fn(() => () => ''),
+}));
+
 // Mock Lucide React Native
 jest.mock('lucide-react-native', () => ({
   Heart: 'Heart',
@@ -79,8 +88,6 @@ jest.mock('react-native-safe-area-context', () => {
     useSafeAreaInsets: () => inset,
   };
 });
-
-
 
 // Silence the warning about React.createRef
 global.console.warn = jest.fn();

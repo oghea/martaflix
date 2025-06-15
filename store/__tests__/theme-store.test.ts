@@ -1,16 +1,22 @@
+import { storage, storageUtils } from '@/lib/storage';
 import { darkTheme, lightTheme } from '@/types/theme';
 import { act, renderHook } from '@testing-library/react-native';
 import { Appearance } from 'react-native';
-import { storage } from '../storage';
 import { useThemeStore } from '../theme-store';
 
 // Mock MMKV storage
-jest.mock('../storage', () => ({
+jest.mock('@/lib/storage', () => ({
   storage: {
     getString: jest.fn(),
     set: jest.fn(),
     delete: jest.fn(),
     contains: jest.fn(),
+  },
+  storageUtils: {
+    get: jest.fn(),
+    set: jest.fn(),
+    remove: jest.fn(),
+    has: jest.fn(),
   },
   STORAGE_KEYS: {
     THEME: 'theme',
@@ -28,6 +34,7 @@ jest.mock('react-native', () => ({
 }));
 
 const mockStorage = storage as jest.Mocked<typeof storage>;
+const mockStorageUtils = storageUtils as jest.Mocked<typeof storageUtils>;
 const mockAppearance = Appearance as jest.Mocked<typeof Appearance>;
 
 describe('useThemeStore', () => {

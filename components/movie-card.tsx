@@ -23,10 +23,12 @@ type Props = {
 // Memoized Rating Badge Component
 const RatingBadge = React.memo(({ 
   rating, 
-  theme 
+  theme,
+  movieId 
 }: { 
   rating: number; 
   theme: any;
+  movieId: number;
 }) => (
   <View 
     className="absolute top-3 right-3 rounded-full px-2 py-1 shadow-md"
@@ -49,6 +51,7 @@ const RatingBadge = React.memo(({
     accessibilityLabel={`Rating: ${rating.toFixed(1)} out of 10`}
   >
     <Text 
+      testID={`rating-text-${movieId}`}
       size="xs"
       className="font-bold"
       style={{ color: theme.colors.rating.text }}
@@ -65,14 +68,17 @@ const FavoriteButton = React.memo(({
   isFavorite, 
   onPress, 
   theme,
-  movieTitle 
+  movieTitle,
+  movieId 
 }: { 
   isFavorite: boolean; 
   onPress: (e?: any) => void;
   theme: any;
   movieTitle: string;
+  movieId: number;
 }) => (
   <Pressable
+    testID={`favorite-button-${movieId}`}
     onPress={onPress}
     className="absolute top-3 left-3 rounded-full p-2 shadow-md"
     style={{
@@ -108,15 +114,18 @@ FavoriteButton.displayName = 'FavoriteButton';
 const MoviePoster = React.memo(({ 
   imageUri, 
   movieTitle, 
-  theme 
+  theme,
+  movieId 
 }: { 
   imageUri: string | null; 
   movieTitle: string;
   theme: any;
+  movieId: number;
 }) => (
   <View className="relative">
     {imageUri ? (
       <Image
+        testID={`movie-poster-${movieId}`}
         source={{ uri: imageUri }}
         className="w-full rounded-t-2xl"
         style={{ 
@@ -130,6 +139,7 @@ const MoviePoster = React.memo(({
       />
     ) : (
       <VStack 
+        testID={`movie-poster-placeholder-${movieId}`}
         className="w-full rounded-t-2xl justify-center items-center border-2 border-dashed"
         style={{ 
           height: 140, 
@@ -139,6 +149,7 @@ const MoviePoster = React.memo(({
       >
         <Text className="text-5xl mb-2">🎬</Text>
         <Text 
+          testID={`movie-no-image-text-${movieId}`}
           size="xs"
           className="text-center font-medium"
           style={{ color: theme.colors.placeholder.text }}
@@ -174,10 +185,11 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
     [movie.poster_path]
   );
 
-  const releaseYear = React.useMemo(() => 
-    new Date(movie.release_date).getFullYear(),
-    [movie.release_date]
-  );
+  const releaseYear = React.useMemo(() => {
+    if (!movie.release_date) return 'Unknown';
+    const year = new Date(movie.release_date).getFullYear();
+    return isNaN(year) ? 'Unknown' : year.toString();
+  }, [movie.release_date]);
 
   return (
     <Pressable 
@@ -212,6 +224,7 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
           imageUri={imageUri} 
           movieTitle={movie.title}
           theme={theme}
+          movieId={movie.id}
         />
         
         {/* Favorite Button */}
@@ -220,12 +233,14 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
           onPress={handleFavoritePress}
           theme={theme}
           movieTitle={movie.title}
+          movieId={movie.id}
         />
         
         {/* Rating Badge */}
         <RatingBadge 
           rating={movie.vote_average}
           theme={theme}
+          movieId={movie.id}
         />
       </View>
 
@@ -253,7 +268,7 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
             accessibilityRole="text"
             accessibilityLabel={`Release year: ${releaseYear}`}
           >
-            {releaseYear}
+            📅 {releaseYear}
           </Text>
           
           <View 
@@ -262,6 +277,7 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
             style={{ backgroundColor: theme.colors.primary }}
           >
             <Text 
+              testID={`popular-text-${movie.id}`}
               size="xs"
               className="font-bold"
               style={{ 
@@ -271,7 +287,7 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
               accessibilityRole="text"
               accessibilityLabel={`Popularity score: ${Math.round(movie.popularity)}`}
             >
-              🔥 {Math.round(movie.popularity)}
+              POPULAR
             </Text>
           </View>
         </HStack>
@@ -285,7 +301,7 @@ export const MovieCard = React.memo(({ movie, onPress }: Props) => {
           accessible={true}
           accessibilityRole="text"
         >
-          {movie.overview || 'No description available.'}
+          {movie.overview || ''}
         </Text>
       </VStack>
     </Pressable>

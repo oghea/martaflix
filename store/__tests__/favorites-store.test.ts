@@ -1,10 +1,10 @@
+import { storageUtils } from '@/lib/storage';
 import type { Movie } from '@/types/movie';
 import { act, renderHook } from '@testing-library/react-native';
 import { useFavoritesStore } from '../favorites-store';
-import { storageUtils } from '../storage';
 
 // Mock the storage utility
-jest.mock('../storage', () => ({
+jest.mock('@/lib/storage', () => ({
   storageUtils: {
     get: jest.fn(),
     set: jest.fn(),

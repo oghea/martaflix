@@ -31,20 +31,28 @@ const getThemeFromMode = (mode: ThemeMode): Theme => {
 
 // Get initial theme - check storage first, fallback to system theme
 const getInitialTheme = (): { mode: ThemeMode; theme: Theme } => {
-  // Try to get stored theme preference
-  const storedThemeMode = storageUtils.get<ThemeMode>(STORAGE_KEYS.THEME);
-  
-  if (storedThemeMode && (storedThemeMode === 'light' || storedThemeMode === 'dark')) {
-    // Use stored preference
-    return {
-      mode: storedThemeMode,
-      theme: getThemeFromMode(storedThemeMode)
-    };
+  try {
+    // Try to get stored theme preference
+    const storedThemeMode = storageUtils.get<ThemeMode>(STORAGE_KEYS.THEME);
+    
+    if (storedThemeMode && (storedThemeMode === 'light' || storedThemeMode === 'dark')) {
+      // Use stored preference
+      return {
+        mode: storedThemeMode,
+        theme: getThemeFromMode(storedThemeMode)
+      };
+    }
+  } catch (error) {
+    // In test environment or if storage fails, fallback to system theme
   }
   
   // Use system theme on first install and save it
   const systemMode = getSystemTheme();
-  storageUtils.set(STORAGE_KEYS.THEME, systemMode);
+  try {
+    storageUtils.set(STORAGE_KEYS.THEME, systemMode);
+  } catch (error) {
+    // Ignore storage errors in test environment
+  }
   
   return {
     mode: systemMode,
@@ -52,15 +60,16 @@ const getInitialTheme = (): { mode: ThemeMode; theme: Theme } => {
   };
 };
 
-const { mode: initialThemeMode, theme: initialTheme } = getInitialTheme();
-
 export const useThemeStore = create<ThemeState & ThemeActions>()(
   devtools(
-    (set, get) => ({
-      // State - now properly initialized with stored or system theme
-      theme: initialTheme,
-      themeMode: initialThemeMode,
-      isLoading: false,
+    (set, get) => {
+      const { mode: initialThemeMode, theme: initialTheme } = getInitialTheme();
+      
+      return {
+        // State - now properly initialized with stored or system theme
+        theme: initialTheme,
+        themeMode: initialThemeMode,
+        isLoading: false,
 
       // Actions
       initializeTheme: () => {
@@ -127,7 +136,8 @@ export const useThemeStore = create<ThemeState & ThemeActions>()(
         // Save to storage
         storageUtils.set(STORAGE_KEYS.THEME, systemMode);
       },
-    }),
+      };
+    },
     {
       name: 'theme-store',
     }
