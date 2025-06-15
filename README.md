@@ -7,6 +7,7 @@ A modern React Native movie discovery app built with Expo, featuring The Movie D
 - 🎯 **Movie Discovery**: Browse popular and trending movies
 - 🔍 **Smart Search**: Find movies with real-time search functionality  
 - ❤️ **Favorites Management**: Save and manage your favorite movies
+- 🎭 **Cast Profiles**: Detailed actor/actress information with biography and filmography
 - 🌙 **Dark/Light Theme**: Automatic theme switching support
 - 📱 **Cross-Platform**: Works on iOS, Android, and web
 - ⚡ **Performance Optimized**: Built with React Query for efficient data caching
@@ -204,6 +205,13 @@ npm run test:coverage
 - ✅ **Web Support**: Full web compatibility with responsive design
 - ✅ **Test Coverage**: Comprehensive unit test suite with coverage reporting
 - ✅ **Error Boundaries**: Graceful error handling throughout the app
+- ✅ **Cast Detail Screen**: Interactive cast member profiles with comprehensive actor/actress information
+  - Biography, personal details (birth date, place of birth, known for department)
+  - Movie filmography with "Known For" section showing their popular movies
+  - Seamless navigation from movie details to cast profiles and back to movies
+  - Custom loading skeleton component for optimal user experience
+  - Consistent card heights and proper spacing in horizontal movie lists
+  - Full theme support and accessibility features throughout
 
 ## ⏱️ Time Spent
 
@@ -225,7 +233,8 @@ npm run test:coverage
 ├── api/                  # API functions and TMDB integration
 ├── app/                  # Expo Router screens and navigation
 │   ├── (tabs)/          # Tab-based navigation screens
-│   └── movie/           # Movie detail screens
+│   ├── movie/           # Movie detail screens
+│   └── cast/            # Cast detail screens
 ├── components/          # Reusable UI components
 │   ├── ui/             # Core UI components (buttons, inputs)
 │   └── *.tsx           # Feature-specific components
