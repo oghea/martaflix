@@ -2,12 +2,17 @@ import type { Theme, ThemeMode } from '@/types/theme';
 import { darkTheme, lightTheme } from '@/types/theme';
 import { Appearance } from 'react-native';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { STORAGE_KEYS, storage } from './storage';
+import { devtools } from 'zustand/middleware';
+import { STORAGE_KEYS, storageUtils } from './storage';
 
-type ThemeStore = {
+type ThemeState = {
   theme: Theme;
   themeMode: ThemeMode;
+  isLoading: boolean;
+};
+
+type ThemeActions = {
+  initializeTheme: () => void;
   toggleTheme: () => void;
   setTheme: (mode: ThemeMode) => void;
   setSystemTheme: () => void;
@@ -24,75 +29,107 @@ const getThemeFromMode = (mode: ThemeMode): Theme => {
   return mode === 'dark' ? darkTheme : lightTheme;
 };
 
-// Get initial theme from system
-const initialThemeMode = getSystemTheme();
-const initialTheme = getThemeFromMode(initialThemeMode);
-
-// Custom MMKV storage implementation for Zustand
-const mmkvStorage = {
-  getItem: (name: string): string | null => {
-    try {
-      const value = storage.getString(name);
-      return value || null;
-    } catch {
-      return null;
-    }
-  },
-  setItem: (name: string, value: string): void => {
-    try {
-      // Ensure value is a string before storing
-      const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-      storage.set(name, stringValue);
-    } catch (error) {
-      console.error('Failed to save theme to storage:', error);
-    }
-  },
-  removeItem: (name: string): void => {
-    try {
-      storage.delete(name);
-    } catch (error) {
-      console.error('Failed to remove theme from storage:', error);
-    }
-  },
+// Get initial theme - check storage first, fallback to system theme
+const getInitialTheme = (): { mode: ThemeMode; theme: Theme } => {
+  // Try to get stored theme preference
+  const storedThemeMode = storageUtils.get<ThemeMode>(STORAGE_KEYS.THEME);
+  
+  if (storedThemeMode && (storedThemeMode === 'light' || storedThemeMode === 'dark')) {
+    // Use stored preference
+    return {
+      mode: storedThemeMode,
+      theme: getThemeFromMode(storedThemeMode)
+    };
+  }
+  
+  // Use system theme on first install and save it
+  const systemMode = getSystemTheme();
+  storageUtils.set(STORAGE_KEYS.THEME, systemMode);
+  
+  return {
+    mode: systemMode,
+    theme: getThemeFromMode(systemMode)
+  };
 };
 
-export const useThemeStore = create<ThemeStore>()(
-  persist(
+const { mode: initialThemeMode, theme: initialTheme } = getInitialTheme();
+
+export const useThemeStore = create<ThemeState & ThemeActions>()(
+  devtools(
     (set, get) => ({
+      // State - now properly initialized with stored or system theme
       theme: initialTheme,
       themeMode: initialThemeMode,
+      isLoading: false,
+
+      // Actions
+      initializeTheme: () => {
+        // This method is now optional since theme is auto-initialized
+        // but kept for backward compatibility
+        set({ isLoading: true });
+        
+        const storedThemeMode = storageUtils.get<ThemeMode>(STORAGE_KEYS.THEME);
+        
+        if (storedThemeMode && (storedThemeMode === 'light' || storedThemeMode === 'dark')) {
+          const theme = getThemeFromMode(storedThemeMode);
+          set({ 
+            themeMode: storedThemeMode, 
+            theme,
+            isLoading: false 
+          });
+        } else {
+          const systemMode = getSystemTheme();
+          const systemTheme = getThemeFromMode(systemMode);
+          set({ 
+            themeMode: systemMode, 
+            theme: systemTheme,
+            isLoading: false 
+          });
+          storageUtils.set(STORAGE_KEYS.THEME, systemMode);
+        }
+      },
       
       toggleTheme: () => {
-        const currentMode = get().themeMode;
-        const newMode = currentMode === 'light' ? 'dark' : 'light';
+        const { themeMode } = get();
+        const newMode = themeMode === 'light' ? 'dark' : 'light';
         const newTheme = getThemeFromMode(newMode);
         
         set({
           themeMode: newMode,
           theme: newTheme,
         });
+        
+        // Save to storage
+        storageUtils.set(STORAGE_KEYS.THEME, newMode);
       },
       
       setTheme: (mode: ThemeMode) => {
         const newTheme = getThemeFromMode(mode);
+        
         set({
           themeMode: mode,
           theme: newTheme,
         });
+        
+        // Save to storage
+        storageUtils.set(STORAGE_KEYS.THEME, mode);
       },
 
       setSystemTheme: () => {
         const systemMode = getSystemTheme();
         const systemTheme = getThemeFromMode(systemMode);
+        
         set({
           themeMode: systemMode,
           theme: systemTheme,
         });
+        
+        // Save to storage
+        storageUtils.set(STORAGE_KEYS.THEME, systemMode);
       },
     }),
     {
-      name: STORAGE_KEYS.THEME,
-      storage: mmkvStorage as any,
+      name: 'theme-store',
     }
   )
 ); 

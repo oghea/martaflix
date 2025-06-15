@@ -16,25 +16,25 @@ export function EmptyState({
   const { theme } = useTheme();
   
   return (
-    <View className="flex-1 items-center justify-center p-6">
-      <View className="items-center">
+    <View className="flex-1 items-center justify-center px-8 py-12">
+      <View className="items-center max-w-sm">
         <View 
-          className="mb-4 h-16 w-16 items-center justify-center rounded-full"
+          className="mb-6 h-20 w-20 items-center justify-center rounded-full shadow-sm"
           style={{ backgroundColor: theme.colors.placeholder.background }}
         >
           <Text className="text-2xl">🎬</Text>
         </View>
         
         <Heading 
-          size="md" 
-          className="mb-2 text-center"
+          size="lg" 
+          className="mb-3 text-center font-semibold"
           style={{ color: theme.colors.text.primary }}
         >
           {title}
         </Heading>
         
         <Text 
-          className="text-center"
+          className="text-center text-base leading-relaxed"
           style={{ color: theme.colors.text.secondary }}
         >
           {message}

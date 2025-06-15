@@ -1,7 +1,13 @@
 import { CastCard } from '@/components/cast-card';
 import { MovieDetailSkeleton } from '@/components/movie-detail-skeleton';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
+import { VStack } from '@/components/ui/vstack';
 import { useFavorites } from '@/hooks/use-favorites';
 import { useMovieCredits, useMovieDetails } from '@/hooks/use-movie-details';
 import { useTheme } from '@/hooks/use-theme';
@@ -14,13 +20,118 @@ import {
   Dimensions,
   Image,
   ImageBackground,
-  Platform,
-  ScrollView,
-  TouchableOpacity
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const screenWidth = Dimensions.get('window').width;
+
+// Memoized Detail Card Component
+const DetailCard = React.memo(({ 
+  label, 
+  value, 
+  theme 
+}: { 
+  label: string; 
+  value: string; 
+  theme: any;
+}) => (
+  <View 
+    className="flex-1 min-w-[45%] mr-2 mb-2 p-4 rounded-xl border"
+    style={{
+      backgroundColor: theme.colors.surface,
+      borderColor: theme.colors.border,
+    }}
+    accessible={true}
+    accessibilityRole="text"
+    accessibilityLabel={`${label}: ${value}`}
+  >
+    <Text 
+      size="xs"
+      className="mb-1"
+      style={{ color: theme.colors.text.tertiary }}
+    >
+      {label}
+    </Text>
+    <Text 
+      size="md"
+      className="font-semibold"
+      style={{ color: theme.colors.text.primary }}
+    >
+      {value}
+    </Text>
+  </View>
+));
+
+DetailCard.displayName = 'DetailCard';
+
+// Memoized Genre Badge Component
+const GenreBadge = React.memo(({ 
+  genre, 
+  theme 
+}: { 
+  genre: { id: number; name: string }; 
+  theme: any;
+}) => (
+  <View
+    className="rounded-2xl px-3 py-1.5 mr-2 mb-2"
+    style={{ backgroundColor: theme.colors.primary }}
+    accessible={true}
+    accessibilityRole="text"
+    accessibilityLabel={`Genre: ${genre.name}`}
+  >
+    <Text 
+      size="xs"
+      className="font-semibold"
+      style={{
+        color: theme.mode === 'dark' ? theme.colors.background : theme.colors.surface,
+      }}
+    >
+      {genre.name}
+    </Text>
+  </View>
+));
+
+GenreBadge.displayName = 'GenreBadge';
+
+// Memoized Cast List Component
+const CastList = React.memo(({ 
+  cast, 
+  theme 
+}: { 
+  cast: any[]; 
+  theme: any;
+}) => (
+  <VStack space="md" className="mb-6">
+    <Heading 
+      size="lg"
+      className="font-bold"
+      style={{ color: theme.colors.text.primary }}
+      accessibilityRole="heading"
+      accessibilityLevel={3}
+    >
+      Cast
+    </Heading>
+    
+    <ScrollView 
+      horizontal 
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingRight: 16 }}
+      accessible={true}
+      accessibilityRole="list"
+      accessibilityLabel="Movie cast list"
+    >
+      {cast.map((castMember) => (
+        <CastCard
+          key={castMember.id}
+          cast={castMember}
+        />
+      ))}
+    </ScrollView>
+  </VStack>
+));
+
+CastList.displayName = 'CastList';
 
 export default function MovieDetailScreen(): React.JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -67,14 +178,14 @@ export default function MovieDetailScreen(): React.JSX.Element {
     }
   }, [movie, toggleFavorite]);
 
-  const formatRuntime = (minutes: number | null): string => {
+  const formatRuntime = React.useCallback((minutes: number | null): string => {
     if (!minutes) return 'Unknown';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
-  };
+  }, []);
 
-  const formatBudget = (amount: number): string => {
+  const formatBudget = React.useCallback((amount: number): string => {
     if (amount === 0) return 'Not disclosed';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -82,34 +193,66 @@ export default function MovieDetailScreen(): React.JSX.Element {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
+  }, []);
+
+  // Memoized values
+  const backdropUri = React.useMemo(() => 
+    movie?.backdrop_path 
+      ? getImageUrl(movie.backdrop_path, IMAGE_SIZES.backdrop.large)
+      : null,
+    [movie?.backdrop_path]
+  );
+
+  const posterUri = React.useMemo(() => 
+    movie?.poster_path 
+      ? getImageUrl(movie.poster_path, IMAGE_SIZES.poster.medium)
+      : null,
+    [movie?.poster_path]
+  );
+
+  const director = React.useMemo(() => 
+    credits?.crew.find(member => member.job === 'Director'),
+    [credits?.crew]
+  );
+
+  const mainCast = React.useMemo(() => 
+    credits?.cast.slice(0, 10) || [],
+    [credits?.cast]
+  );
 
   if (movieError) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Text style={{ 
-            fontSize: 18, 
-            color: theme.colors.text.primary, 
-            textAlign: 'center',
-            marginBottom: 16 
-          }}>
+      <SafeAreaView 
+        className="flex-1"
+        style={{ backgroundColor: theme.colors.background }}
+      >
+        <VStack 
+          className="flex-1 justify-center items-center p-5"
+          accessible={true}
+          accessibilityRole="alert"
+        >
+          <Text 
+            size="lg"
+            className="text-center mb-4 font-medium"
+            style={{ color: theme.colors.text.primary }}
+          >
             Failed to load movie details
           </Text>
-          <TouchableOpacity
+          <Button
             onPress={handleBackPress}
-            style={{
-              backgroundColor: theme.colors.primary,
-              paddingHorizontal: 20,
-              paddingVertical: 10,
-              borderRadius: 8,
-            }}
+            size="md"
+            variant="solid"
+            className="px-5 py-2.5 rounded-lg"
+            style={{ backgroundColor: theme.colors.primary }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to previous screen"
           >
-            <Text style={{ color: theme.colors.surface, fontWeight: 'bold' }}>
+            <ButtonText style={{ color: theme.colors.surface }}>
               Go Back
-            </Text>
-          </TouchableOpacity>
-        </View>
+            </ButtonText>
+          </Button>
+        </VStack>
       </SafeAreaView>
     );
   }
@@ -118,409 +261,295 @@ export default function MovieDetailScreen(): React.JSX.Element {
     return <MovieDetailSkeleton />;
   }
 
-  const backdropUri = movie.backdrop_path 
-    ? getImageUrl(movie.backdrop_path, IMAGE_SIZES.backdrop.large)
-    : null;
-
-  const posterUri = movie.poster_path 
-    ? getImageUrl(movie.poster_path, IMAGE_SIZES.poster.medium)
-    : null;
-
-  const director = credits?.crew.find(member => member.job === 'Director');
-  const mainCast = credits?.cast.slice(0, 10) || [];
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+    <SafeAreaView 
+      className="flex-1"
+      style={{ backgroundColor: theme.colors.background }}
+    >
+             <ScrollView 
+         className="flex-1"
+         showsVerticalScrollIndicator={false}
+         accessible={true}
+         accessibilityRole="scrollbar"
+         accessibilityLabel="Movie details"
+       >
         {/* Hero Section with Backdrop */}
-        <View style={{ position: 'relative', height: 400 }}>
+                 <View 
+           className="relative h-96"
+           accessible={true}
+           accessibilityRole="image"
+           accessibilityLabel={`${movie.title} backdrop image`}
+         >
           {backdropUri ? (
             <ImageBackground
               source={{ uri: backdropUri }}
-              style={{ width: '100%', height: '100%' }}
+              className="w-full h-full"
               resizeMode="cover"
             >
               <BlurView
                 intensity={20}
                 tint={theme.mode === 'dark' ? 'dark' : 'light'}
+                className="absolute inset-0"
                 style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
                   backgroundColor: theme.mode === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
                 }}
               />
             </ImageBackground>
           ) : (
-            <View style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: theme.colors.surface,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 48, opacity: 0.3 }}>🎬</Text>
+            <View 
+              className="w-full h-full justify-center items-center"
+              style={{ backgroundColor: theme.colors.surface }}
+            >
+              <Text className="text-5xl opacity-30">🎬</Text>
             </View>
           )}
 
           {/* Header Controls */}
-          <View style={{
-            position: 'absolute',
-            top: Platform.OS === 'ios' ? 50 : 20,
-            left: 0,
-            right: 0,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingHorizontal: 16,
-            zIndex: 10,
-          }}>
-            <TouchableOpacity
+          <HStack
+            className="absolute top-12 left-0 right-0 justify-between items-center px-4 z-10"
+            style={{ top: Platform.OS === 'ios' ? 50 : 20 }}
+          >
+            <Pressable
               onPress={handleBackPress}
-              style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 20,
-                padding: 8,
-              }}
+              className="bg-black/70 rounded-full p-2"
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              accessibilityHint="Navigate to previous screen"
             >
               <ArrowLeft size={24} color="#fff" />
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={handleFavoritePress}
-              style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 20,
-                padding: 8,
-              }}
+              className="bg-black/70 rounded-full p-2"
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={isMovieFavorite ? "Remove from favorites" : "Add to favorites"}
+              accessibilityHint={isMovieFavorite ? "Double tap to remove from favorites" : "Double tap to add to favorites"}
             >
               <Heart
                 size={24}
                 color={isMovieFavorite ? '#ef4444' : '#fff'}
                 fill={isMovieFavorite ? '#ef4444' : 'transparent'}
               />
-            </TouchableOpacity>
-          </View>
+            </Pressable>
+          </HStack>
 
           {/* Movie Poster and Basic Info */}
-          <View style={{
-            position: 'absolute',
-            bottom: 20,
-            left: 16,
-            right: 16,
-            flexDirection: 'row',
-          }}>
+          <HStack 
+            className="absolute bottom-5 left-4 right-4"
+            space="md"
+          >
             {/* Poster */}
-            <View style={{ marginRight: 16 }}>
+            <View>
               {posterUri ? (
                 <Image
                   source={{ uri: posterUri }}
-                  style={{
-                    width: 120,
-                    height: 180,
-                    borderRadius: 12,
-                    borderWidth: 3,
-                    borderColor: '#fff',
-                  }}
+                  className="w-30 h-44 rounded-xl border-4 border-white"
                   resizeMode="cover"
+                  accessible={true}
+                  accessibilityRole="image"
+                  accessibilityLabel={`${movie.title} movie poster`}
                 />
               ) : (
-                <View style={{
-                  width: 120,
-                  height: 180,
-                  borderRadius: 12,
-                  backgroundColor: theme.colors.placeholder.background,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 3,
-                  borderColor: '#fff',
-                }}>
-                  <Text style={{ fontSize: 32 }}>🎬</Text>
+                <View 
+                  className="w-30 h-44 rounded-xl border-4 border-white justify-center items-center"
+                  style={{ backgroundColor: theme.colors.placeholder.background }}
+                >
+                  <Text className="text-3xl">🎬</Text>
                 </View>
               )}
             </View>
 
             {/* Movie Info */}
-            <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-              <Text style={{
-                fontSize: 24,
-                fontWeight: 'bold',
-                color: '#fff',
-                marginBottom: 8,
-                textShadowColor: 'rgba(0,0,0,0.8)',
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 2,
-              }}>
-                {movie.title}
-              </Text>
-
-              {movie.tagline && (
-                <Text style={{
-                  fontSize: 14,
-                  color: '#e5e5e5',
-                  fontStyle: 'italic',
-                  marginBottom: 8,
+            <VStack className="flex-1 justify-end" space="xs">
+              <Heading
+                size="2xl"
+                className="font-bold text-white"
+                style={{
                   textShadowColor: 'rgba(0,0,0,0.8)',
                   textShadowOffset: { width: 1, height: 1 },
                   textShadowRadius: 2,
-                }}>
+                }}
+                accessibilityRole="heading"
+                accessibilityLevel={1}
+              >
+                {movie.title}
+              </Heading>
+
+              {movie.tagline && (
+                <Text 
+                  size="sm"
+                  className="text-gray-200 italic"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.8)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                  accessible={true}
+                  accessibilityRole="text"
+                  accessibilityLabel={`Tagline: ${movie.tagline}`}
+                >
                   "{movie.tagline}"
                 </Text>
               )}
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <HStack className="items-center" space="xs">
                 <Star size={16} color="#fbbf24" fill="#fbbf24" />
-                <Text style={{ 
-                  color: '#fff', 
-                  marginLeft: 4, 
-                  fontWeight: 'bold',
-                  textShadowColor: 'rgba(0,0,0,0.8)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                }}>
+                <Text 
+                  className="text-white font-bold"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.8)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                  accessible={true}
+                  accessibilityLabel={`Rating: ${movie.vote_average.toFixed(1)} out of 10`}
+                >
                   {movie.vote_average.toFixed(1)}
                 </Text>
-                <Text style={{ 
-                  color: '#e5e5e5', 
-                  marginLeft: 4,
-                  textShadowColor: 'rgba(0,0,0,0.8)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                }}>
+                <Text 
+                  className="text-gray-200"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.8)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                  accessible={true}
+                  accessibilityLabel={`${movie.vote_count} votes`}
+                >
                   ({movie.vote_count.toLocaleString()} votes)
                 </Text>
-              </View>
+              </HStack>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Calendar size={16} color="#e5e5e5" />
-                <Text style={{ 
-                  color: '#e5e5e5', 
-                  marginLeft: 4,
-                  textShadowColor: 'rgba(0,0,0,0.8)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                  {new Date(movie.release_date).getFullYear()}
-                </Text>
-                {movie.runtime && (
-                  <>
-                    <Clock size={16} color="#e5e5e5" style={{ marginLeft: 16 }} />
-                    <Text style={{ 
-                      color: '#e5e5e5', 
-                      marginLeft: 4,
+              <HStack className="items-center" space="md">
+                <HStack className="items-center" space="xs">
+                  <Calendar size={16} color="#e5e5e5" />
+                  <Text 
+                    className="text-gray-200"
+                    style={{
                       textShadowColor: 'rgba(0,0,0,0.8)',
                       textShadowOffset: { width: 1, height: 1 },
                       textShadowRadius: 2,
-                    }}>
+                    }}
+                    accessible={true}
+                    accessibilityLabel={`Release year: ${new Date(movie.release_date).getFullYear()}`}
+                  >
+                    {new Date(movie.release_date).getFullYear()}
+                  </Text>
+                </HStack>
+                {movie.runtime && (
+                  <HStack className="items-center" space="xs">
+                    <Clock size={16} color="#e5e5e5" />
+                    <Text 
+                      className="text-gray-200"
+                      style={{
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 1, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                      accessible={true}
+                      accessibilityLabel={`Runtime: ${formatRuntime(movie.runtime)}`}
+                    >
                       {formatRuntime(movie.runtime)}
                     </Text>
-                  </>
+                  </HStack>
                 )}
-              </View>
-            </View>
-          </View>
+              </HStack>
+            </VStack>
+          </HStack>
         </View>
 
         {/* Content */}
-        <View style={{ padding: 16 }}>
+        <VStack className="p-4" space="lg">
           {/* Genres */}
           {movie.genres.length > 0 && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
+            <View 
+              className="flex-row flex-wrap"
+              accessible={true}
+              accessibilityRole="list"
+              accessibilityLabel="Movie genres"
+            >
               {movie.genres.map((genre) => (
-                <View
-                  key={genre.id}
-                  style={{
-                    backgroundColor: theme.colors.primary,
-                    borderRadius: 16,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text style={{
-                    color: theme.mode === 'dark' ? theme.colors.background : theme.colors.surface,
-                    fontSize: 12,
-                    fontWeight: '600',
-                  }}>
-                    {genre.name}
-                  </Text>
-                </View>
+                <GenreBadge key={genre.id} genre={genre} theme={theme} />
               ))}
             </View>
           )}
 
           {/* Overview */}
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: theme.colors.text.primary,
-              marginBottom: 8,
-            }}>
+          <VStack space="sm">
+            <Heading 
+              size="lg"
+              className="font-bold"
+              style={{ color: theme.colors.text.primary }}
+              accessibilityRole="heading"
+              accessibilityLevel={2}
+            >
               Overview
-            </Text>
-            <Text style={{
-              fontSize: 16,
-              color: theme.colors.text.secondary,
-              lineHeight: 24,
-            }}>
+            </Heading>
+            <Text 
+              size="md"
+              className="leading-6"
+              style={{ color: theme.colors.text.secondary }}
+              accessible={true}
+              accessibilityRole="text"
+            >
               {movie.overview || 'No overview available.'}
             </Text>
-          </View>
+          </VStack>
 
           {/* Movie Details */}
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: theme.colors.text.primary,
-              marginBottom: 12,
-            }}>
+          <VStack space="md">
+            <Heading 
+              size="lg"
+              className="font-bold"
+              style={{ color: theme.colors.text.primary }}
+              accessibilityRole="heading"
+              accessibilityLevel={2}
+            >
               Details
-            </Text>
+            </Heading>
             
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            <View 
+              className="flex-row flex-wrap"
+              accessible={true}
+              accessibilityRole="list"
+              accessibilityLabel="Movie details"
+            >
               {director && (
-                <View style={{
-                  backgroundColor: theme.colors.surface,
-                  borderRadius: 12,
-                  padding: 16,
-                  marginRight: 8,
-                  marginBottom: 8,
-                  flex: 1,
-                  minWidth: '45%',
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
-                }}>
-                  <Text style={{
-                    fontSize: 12,
-                    color: theme.colors.text.tertiary,
-                    marginBottom: 4,
-                  }}>
-                    Director
-                  </Text>
-                  <Text style={{
-                    fontSize: 16,
-                    fontWeight: '600',
-                    color: theme.colors.text.primary,
-                  }}>
-                    {director.name}
-                  </Text>
-                </View>
+                <DetailCard
+                  label="Director"
+                  value={director.name}
+                  theme={theme}
+                />
               )}
 
-              <View style={{
-                backgroundColor: theme.colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                marginRight: 8,
-                marginBottom: 8,
-                flex: 1,
-                minWidth: '45%',
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  color: theme.colors.text.tertiary,
-                  marginBottom: 4,
-                }}>
-                  Budget
-                </Text>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: theme.colors.text.primary,
-                }}>
-                  {formatBudget(movie.budget)}
-                </Text>
-              </View>
+              <DetailCard
+                label="Budget"
+                value={formatBudget(movie.budget)}
+                theme={theme}
+              />
 
-              <View style={{
-                backgroundColor: theme.colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                marginRight: 8,
-                marginBottom: 8,
-                flex: 1,
-                minWidth: '45%',
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  color: theme.colors.text.tertiary,
-                  marginBottom: 4,
-                }}>
-                  Revenue
-                </Text>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: theme.colors.text.primary,
-                }}>
-                  {formatBudget(movie.revenue)}
-                </Text>
-              </View>
+              <DetailCard
+                label="Revenue"
+                value={formatBudget(movie.revenue)}
+                theme={theme}
+              />
 
-              <View style={{
-                backgroundColor: theme.colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 8,
-                flex: 1,
-                minWidth: '45%',
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  color: theme.colors.text.tertiary,
-                  marginBottom: 4,
-                }}>
-                  Status
-                </Text>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: theme.colors.text.primary,
-                }}>
-                  {movie.status}
-                </Text>
-              </View>
+              <DetailCard
+                label="Status"
+                value={movie.status}
+                theme={theme}
+              />
             </View>
-          </View>
+          </VStack>
 
           {/* Cast */}
           {!isLoadingCredits && mainCast.length > 0 && (
-            <View style={{ marginBottom: 24 }}>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: theme.colors.text.primary,
-                marginBottom: 12,
-              }}>
-                Cast
-              </Text>
-              
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 16 }}
-              >
-                {mainCast.map((cast) => (
-                  <CastCard
-                    key={cast.id}
-                    cast={cast}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+            <CastList cast={mainCast} theme={theme} />
           )}
-        </View>
+        </VStack>
       </ScrollView>
     </SafeAreaView>
   );

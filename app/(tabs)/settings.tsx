@@ -1,14 +1,14 @@
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { ScrollView } from '@/components/ui/scroll-view';
+import { StatusBar } from '@/components/ui/status-bar';
+import { Text } from '@/components/ui/text';
+import { View } from '@/components/ui/view';
+import { VStack } from '@/components/ui/vstack';
 import { useFavorites } from '@/hooks/use-favorites';
 import { useTheme } from '@/hooks/use-theme';
-import React from 'react';
-import {
-  Alert,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import React, { useCallback } from 'react';
+import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type SettingItemProps = {
@@ -18,82 +18,93 @@ type SettingItemProps = {
   rightComponent?: React.ReactNode;
   showArrow?: boolean;
   destructive?: boolean;
+  icon?: string;
 };
 
-function SettingItem({
+const SettingItem = React.memo(({
   title,
   subtitle,
   onPress,
   rightComponent,
   showArrow = true,
   destructive = false,
-}: SettingItemProps) {
+  icon,
+}: SettingItemProps) => {
   const { theme } = useTheme();
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      style={{
-        backgroundColor: theme.colors.surface,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        marginBottom: 8,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
+      style={[
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+        }
+      ]}
+      className="p-4 mb-2 rounded-xl border active:scale-98 active:opacity-80"
       disabled={!onPress}
+      // Accessibility props
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}${subtitle ? `: ${subtitle}` : ''}`}
+      accessibilityHint={onPress ? "Double tap to activate" : undefined}
     >
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: '600',
-            color: destructive ? '#ef4444' : theme.colors.text.primary,
-            marginBottom: subtitle ? 4 : 0,
-          }}
-        >
-          {title}
-        </Text>
-        {subtitle && (
+      <HStack className="items-center justify-between">
+        <HStack className="flex-1 items-center" space="md">
+          {icon && (
+            <Text size="lg" accessibilityRole="text">
+              {icon}
+            </Text>
+          )}
+          <VStack className="flex-1">
+            <Text
+              size="md"
+              className="font-semibold"
+              style={{ 
+                color: destructive ? '#ef4444' : theme.colors.text.primary 
+              }}
+            >
+              {title}
+            </Text>
+            {subtitle && (
+              <Text
+                size="sm"
+                style={{ color: theme.colors.text.secondary }}
+              >
+                {subtitle}
+              </Text>
+            )}
+          </VStack>
+        </HStack>
+        
+        {rightComponent && (
+          <View className="ml-3">
+            {rightComponent}
+          </View>
+        )}
+        
+        {showArrow && onPress && !rightComponent && (
           <Text
-            style={{
-              fontSize: 14,
-              color: theme.colors.text.secondary,
-            }}
+            size="md"
+            style={{ color: theme.colors.text.tertiary }}
+            className="ml-3"
           >
-            {subtitle}
+            →
           </Text>
         )}
-      </View>
-      {rightComponent && (
-        <View style={{ marginLeft: 12 }}>
-          {rightComponent}
-        </View>
-      )}
-      {showArrow && onPress && !rightComponent && (
-        <Text
-          style={{
-            fontSize: 16,
-            color: theme.colors.text.tertiary,
-            marginLeft: 12,
-          }}
-        >
-          →
-        </Text>
-      )}
-    </TouchableOpacity>
+      </HStack>
+    </Pressable>
   );
-}
+});
+
+SettingItem.displayName = 'SettingItem';
 
 export default function SettingsScreen() {
   const { theme, toggleTheme, setSystemTheme } = useTheme();
   const { favoritesCount, clearAllFavorites } = useFavorites();
 
-  const handleClearFavorites = () => {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleClearFavorites = useCallback(() => {
     if (favoritesCount === 0) {
       Alert.alert(
         'No Favorites',
@@ -121,9 +132,9 @@ export default function SettingsScreen() {
         },
       ]
     );
-  };
+  }, [favoritesCount, clearAllFavorites]);
 
-  const handleUseSystemTheme = () => {
+  const handleUseSystemTheme = useCallback(() => {
     Alert.alert(
       'Use System Theme',
       'This will change the app theme to match your device\'s system theme setting.',
@@ -141,11 +152,16 @@ export default function SettingsScreen() {
         },
       ]
     );
-  };
+  }, [setSystemTheme]);
+
+  const handleToggleTheme = useCallback(() => {
+    toggleTheme();
+  }, [toggleTheme]);
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      className="flex-1"
+      style={{ backgroundColor: theme.colors.background }}
       edges={['top']}
     >
       <StatusBar
@@ -153,91 +169,72 @@ export default function SettingsScreen() {
         backgroundColor={theme.colors.background}
       />
       
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView className="flex-1">
         {/* Header */}
         <View
+          className="p-4 border-b"
           style={{
-            padding: 16,
             backgroundColor: theme.colors.surface,
-            borderBottomWidth: 1,
             borderBottomColor: theme.colors.border,
           }}
         >
           <Text
-            style={{
-              fontSize: 24,
-              fontWeight: 'bold',
-              color: theme.colors.text.primary,
-            }}
+            size="2xl"
+            className="font-bold"
+            style={{ color: theme.colors.text.primary }}
           >
             Settings
           </Text>
         </View>
 
         {/* Settings Content */}
-        <View style={{ padding: 16 }}>
+        <View className="p-4">
           {/* Appearance Section */}
           <Text
-            style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: theme.colors.text.primary,
-              marginBottom: 12,
-            }}
+            size="lg"
+            className="font-bold mb-3"
+            style={{ color: theme.colors.text.primary }}
           >
             Appearance
           </Text>
           
-          <SettingItem
-            title="Toggle Theme"
-            subtitle={`Current: ${theme.mode === 'dark' ? 'Dark' : 'Light'} mode`}
-            onPress={toggleTheme}
-            rightComponent={
-              <View
-                style={{
-                  backgroundColor: theme.colors.primary,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme.mode === 'dark' ? theme.colors.background : theme.colors.surface,
-                    fontSize: 12,
-                    fontWeight: '600',
-                  }}
+          <VStack space="xs">
+            <SettingItem
+              title="Toggle Theme"
+              subtitle={`Current: ${theme.mode === 'dark' ? 'Dark' : 'Light'} mode`}
+              onPress={handleToggleTheme}
+              icon={theme.mode === 'dark' ? '🌙' : '☀️'}
+              rightComponent={
+                <View
+                  className="px-3 py-1.5 rounded-full"
+                  style={{ backgroundColor: theme.colors.primary }}
                 >
-                  {theme.mode === 'dark' ? '🌙' : '☀️'}
-                </Text>
-              </View>
-            }
-          />
+                  <Text
+                    size="xs"
+                    className="font-semibold"
+                    style={{
+                      color: theme.mode === 'dark' ? theme.colors.background : theme.colors.surface,
+                    }}
+                  >
+                    {theme.mode === 'dark' ? 'Dark' : 'Light'}
+                  </Text>
+                </View>
+              }
+            />
 
-          <SettingItem
-            title="Use System Theme"
-            subtitle="Match your device's theme setting"
-            onPress={handleUseSystemTheme}
-            rightComponent={
-              <Text
-                style={{
-                  fontSize: 16,
-                }}
-              >
-                📱
-              </Text>
-            }
-          />
+            <SettingItem
+              title="Use System Theme"
+              subtitle="Match your device's theme setting"
+              onPress={handleUseSystemTheme}
+              icon="📱"
+            />
+          </VStack>
 
           {/* Favorites Section */}
           <Text
-            style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: theme.colors.text.primary,
-              marginBottom: 12,
-              marginTop: 24,
-            }}
+            size="lg"
+            className="font-bold mb-3 mt-6"
+            style={{ color: theme.colors.text.primary }}
           >
             Favorites
           </Text>
@@ -247,54 +244,36 @@ export default function SettingsScreen() {
             subtitle={`${favoritesCount} movie${favoritesCount !== 1 ? 's' : ''} saved`}
             onPress={handleClearFavorites}
             destructive={true}
-            rightComponent={
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: '#ef4444',
-                }}
-              >
-                🗑️
-              </Text>
-            }
+            icon="🗑️"
           />
 
           {/* App Info */}
           <View
+            className="mt-6 p-4 rounded-xl border items-center"
             style={{
               backgroundColor: theme.colors.surface,
-              padding: 16,
-              borderRadius: 12,
-              marginTop: 24,
-              borderWidth: 1,
               borderColor: theme.colors.border,
-              alignItems: 'center',
             }}
           >
             <Text
-              style={{
-                fontSize: 32,
-                marginBottom: 8,
-              }}
+              size="3xl"
+              className="mb-2"
+              accessibilityRole="text"
+              accessibilityLabel="Movie app icon"
             >
               🎬
             </Text>
             <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: theme.colors.text.primary,
-                marginBottom: 4,
-              }}
+              size="lg"
+              className="font-bold mb-1"
+              style={{ color: theme.colors.text.primary }}
             >
               Martaflix
             </Text>
             <Text
-              style={{
-                fontSize: 14,
-                color: theme.colors.text.secondary,
-                textAlign: 'center',
-              }}
+              size="sm"
+              className="text-center"
+              style={{ color: theme.colors.text.secondary }}
             >
               Your personal movie discovery app
             </Text>

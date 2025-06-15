@@ -2,18 +2,16 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { MovieCard } from '@/components/movie-card';
 import { MovieSkeletonList } from '@/components/movie-skeleton';
+import { FlatList } from '@/components/ui/flat-list';
+import { Input, InputField } from '@/components/ui/input';
+import { StatusBar } from '@/components/ui/status-bar';
+import { Text } from '@/components/ui/text';
+import { View } from '@/components/ui/view';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useSearchMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import {
-  FlatList,
-  StatusBar,
-  Text,
-  TextInput,
-  View
-} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -44,35 +42,41 @@ export default function SearchScreen() {
   );
 
   const renderContent = () => {
-    if (isLoading && debouncedQuery) {
+    if (isLoading && debouncedQuery && debouncedQuery.length >= 2) {
       return <MovieSkeletonList />;
     }
 
     if (error) {
       return (
-        <ErrorState
-          message="Failed to search movies"
-          error={error}
-          onRetry={handleRetry}
-        />
+        <View className="flex-1">
+          <ErrorState
+            message="Failed to search movies"
+            error={error}
+            onRetry={handleRetry}
+          />
+        </View>
       );
     }
 
-    if (!debouncedQuery) {
+    if (!debouncedQuery || debouncedQuery.length < 2) {
       return (
-        <EmptyState
-          title="Search Movies"
-          message="Enter a movie title to start searching"
-        />
+        <View className="flex-1">
+          <EmptyState
+            title="Search Movies"
+            message="Enter at least 2 characters to start searching"
+          />
+        </View>
       );
     }
 
     if (data && data.results && data.results.length === 0) {
       return (
-        <EmptyState
-          title="No Results"
-          message={`No movies found for "${debouncedQuery}"`}
-        />
+        <View className="flex-1">
+          <EmptyState
+            title="No Results"
+            message={`No movies found for "${debouncedQuery}"`}
+          />
+        </View>
       );
     }
 
@@ -95,8 +99,9 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
+    <SafeAreaView 
+      className="flex-1" 
+      style={{ backgroundColor: theme.colors.background }}
       edges={['top']}
     >
       <StatusBar
@@ -104,51 +109,46 @@ export default function SearchScreen() {
         backgroundColor={theme.colors.background}
       />
       
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
         {/* Header */}
-        <View
-          style={{
-            padding: 16,
+        <View 
+          className="p-4 border-b"
+          style={{ 
             backgroundColor: theme.colors.surface,
-            borderBottomWidth: 1,
             borderBottomColor: theme.colors.border,
           }}
         >
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: 'bold',
-              color: theme.colors.text.primary,
-              marginBottom: 16,
-            }}
+          <Text 
+            size="2xl" 
+            className="font-bold mb-4"
+            style={{ color: theme.colors.text.primary }}
           >
             Search Movies
           </Text>
           
           {/* Search Input */}
-          <TextInput
-            style={{
-              backgroundColor: theme.colors.background,
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              fontSize: 16,
-              color: theme.colors.text.primary,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-            }}
-            placeholder="Search for movies..."
-            placeholderTextColor={theme.colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCorrect={false}
-            autoCapitalize="none"
-            returnKeyType="search"
-          />
+          <Input 
+            variant="outline" 
+            size="md" 
+            style={{ backgroundColor: theme.colors.background }}
+          >
+            <InputField
+              placeholder="Search for movies..."
+              placeholderTextColor={theme.colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              style={{ color: theme.colors.text.primary }}
+            />
+          </Input>
         </View>
 
-        {/* Content */}
-        {renderContent()}
+        {/* Content Area */}
+        <View className="flex-1">
+          {renderContent()}
+        </View>
       </View>
     </SafeAreaView>
   );

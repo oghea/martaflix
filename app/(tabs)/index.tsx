@@ -2,18 +2,40 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { MovieCard } from '@/components/movie-card';
 import { MovieSkeletonList } from '@/components/movie-skeleton';
+import { FlatList } from '@/components/ui/flat-list';
 import { Heading } from '@/components/ui/heading';
+import { RefreshControl } from '@/components/ui/refresh-control';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Spinner } from '@/components/ui/spinner';
+import { StatusBar } from '@/components/ui/status-bar';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
+import { VStack } from '@/components/ui/vstack';
 import { useInfinitePopularMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
 import type { Movie } from '@/types/movie';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { FlatList, ListRenderItem, RefreshControl, StatusBar } from 'react-native';
+import { ListRenderItem } from 'react-native';
+
+// Memoized Movie Card Component for performance optimization
+const MemoizedMovieCard = React.memo(({ 
+  movie, 
+  onPress 
+}: { 
+  movie: Movie; 
+  onPress: (movieId: number) => void;
+}) => {
+  return (
+    <MovieCard 
+      movie={movie} 
+      onPress={onPress}
+    />
+  );
+});
+
+MemoizedMovieCard.displayName = 'MemoizedMovieCard';
 
 export default function DiscoverScreen(): React.JSX.Element {
   const router = useRouter();
@@ -65,55 +87,67 @@ export default function DiscoverScreen(): React.JSX.Element {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderMovie: ListRenderItem<Movie> = React.useCallback(
-    ({ item }) => <MovieCard movie={item} onPress={handleMoviePress} />,
+    ({ item }) => <MemoizedMovieCard movie={item} onPress={handleMoviePress} />,
     [handleMoviePress]
   );
+
+  const keyExtractor = React.useCallback((item: Movie) => item.id.toString(), []);
 
   const renderFooter = React.useCallback(() => {
     if (isFetchingNextPage) {
       return (
-        <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+        <VStack 
+          className="py-8 items-center"
+          accessible={true}
+          accessibilityRole="progressbar"
+          accessibilityLabel="Loading more movies"
+        >
           <Spinner size="small" />
-          <Text style={{ 
-            marginTop: 12, 
-            fontSize: 14, 
-            color: theme.colors.text.secondary,
-            fontWeight: '500' 
-          }}>
+          <Text 
+            size="sm"
+            className="mt-3 font-medium"
+            style={{ color: theme.colors.text.secondary }}
+          >
             Loading more movies...
           </Text>
-        </View>
+        </VStack>
       );
     }
-    return <View style={{ paddingBottom: 24 }} />;
+    return <View className="pb-6" />;
   }, [isFetchingNextPage, theme.colors.text.secondary]);
 
   const renderHeader = React.useCallback(() => (
-    <View style={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 16 }}>
-      <View style={{ marginBottom: 12 }}>
+    <View 
+      className="px-4 pb-6 pt-4"
+      accessible={true}
+      accessibilityRole="header"
+    >
+      <VStack space="xs" className="mb-3">
         <Heading 
           size="2xl" 
+          className="font-bold"
           style={{ 
-            marginBottom: 8, 
             color: theme.colors.text.primary,
-            fontWeight: 'bold',
             letterSpacing: -0.5
           }}
+          accessibilityRole="heading"
+          accessibilityLevel={1}
         >
           Popular Movies
         </Heading>
-        <Text style={{ 
-          color: theme.colors.text.secondary, 
-          fontSize: 16, 
-          fontWeight: '500' 
-        }}>
+        <Text 
+          size="md"
+          className="font-medium"
+          style={{ color: theme.colors.text.secondary }}
+          accessibilityRole="text"
+        >
           Discover the most popular movies right now
         </Text>
-      </View>
+      </VStack>
     </View>
-  ), [theme.colors.text.primary, theme.colors.text.secondary, theme.colors.text.tertiary, isRefreshing, isRefetching]);
+  ), [theme.colors.text.primary, theme.colors.text.secondary]);
 
-  // Enhanced refresh control
+  // Enhanced refresh control with proper accessibility
   const refreshControl = React.useMemo(() => (
     <RefreshControl
       refreshing={isRefreshing || isRefetching}
@@ -124,21 +158,27 @@ export default function DiscoverScreen(): React.JSX.Element {
       titleColor={theme.colors.text.secondary}
       progressBackgroundColor={theme.colors.surface}
       progressViewOffset={0}
+      accessible={true}
+      accessibilityLabel="Pull to refresh movies"
+      accessibilityHint="Pull down to refresh the movie list"
     />
   ), [isRefreshing, isRefetching, handleRefresh, theme.colors.primary, theme.colors.text.secondary, theme.colors.surface]);
 
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView 
+        className="flex-1"
+        style={{ backgroundColor: theme.colors.background }}
+      >
         <StatusBar
           barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
           backgroundColor={theme.colors.background}
         />
-        <View style={{ flex: 1 }}>
+        <VStack className="flex-1">
           {renderHeader()}
           <MovieSkeletonList count={6} />
-        </View>
+        </VStack>
       </SafeAreaView>
     );
   }
@@ -146,18 +186,23 @@ export default function DiscoverScreen(): React.JSX.Element {
   // Error state
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView 
+        className="flex-1"
+        style={{ backgroundColor: theme.colors.background }}
+      >
         <StatusBar
           barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
           backgroundColor={theme.colors.background}
         />
-        {renderHeader()}
-        <ErrorState
-          error={error}
-          onRetry={handleRetry}
-          title="Failed to load movies"
-          message="Please check your internet connection and try again."
-        />
+        <VStack className="flex-1">
+          {renderHeader()}
+          <ErrorState
+            error={error}
+            onRetry={handleRetry}
+            title="Failed to load movies"
+            message="Please check your internet connection and try again."
+          />
+        </VStack>
       </SafeAreaView>
     );
   }
@@ -165,19 +210,27 @@ export default function DiscoverScreen(): React.JSX.Element {
   // Empty state
   if (!movies.length && !isRefreshing && !isRefetching) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView 
+        className="flex-1"
+        style={{ backgroundColor: theme.colors.background }}
+      >
         <StatusBar
           barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
           backgroundColor={theme.colors.background}
         />
-        {renderHeader()}
-        <EmptyState />
+        <VStack className="flex-1">
+          {renderHeader()}
+          <EmptyState />
+        </VStack>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView 
+      className="flex-1"
+      style={{ backgroundColor: theme.colors.background }}
+    >
       <StatusBar
         barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
         backgroundColor={theme.colors.background}
@@ -185,7 +238,7 @@ export default function DiscoverScreen(): React.JSX.Element {
       <FlatList
         data={movies}
         renderItem={renderMovie}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={keyExtractor}
         numColumns={2}
         contentContainerStyle={{ 
           paddingBottom: 32,
@@ -207,6 +260,11 @@ export default function DiscoverScreen(): React.JSX.Element {
         updateCellsBatchingPeriod={50}
         windowSize={10}
         getItemLayout={undefined} // Let FlatList calculate for numColumns > 1
+        // Accessibility
+        accessible={true}
+        accessibilityRole="list"
+        accessibilityLabel="Popular movies list"
+        accessibilityHint="Scroll to browse popular movies. Pull down to refresh."
       />
     </SafeAreaView>
   );

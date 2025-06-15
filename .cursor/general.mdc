@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
 # React Native/Expo Project
 
 You are an expert in TypeScript, React Native, Expo, and Mobile UI development with Nativewind.
@@ -72,16 +77,6 @@ Every time you choose to apply a rule(s), explicitly state the rule(s) in the ou
 - Avoid unnecessary curly braces in conditionals
 - Use declarative JSX
 - Implement proper TypeScript discriminated unions for message types
-
-## UI and Styling
-
-- Use Nativewind for styling and components
-- Use built-in ui components such as Button, Input from `@components/ui`
-- Ensure high accessibility (a11y) standards using ARIA roles and native accessibility props.
-- Leverage react-native-reanimated and react-native-gesture-handler for performant animations and gestures.
-- Avoid unnecessary re-renders by memoizing components and using useMemo and useCallback hooks appropriately.
-- Make sure to use defined colors and fonts in the tailwind config file.
-- Make sure always support dark mode and light mode for styling.
 
 Here is a simple example of how a component should be written using :
 
