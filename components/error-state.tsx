@@ -1,8 +1,8 @@
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
+import { VStack } from '@/components/ui/vstack';
 import { useTheme } from '@/hooks/use-theme';
 import * as React from 'react';
 
@@ -13,17 +13,23 @@ type Props = {
   message?: string;
 };
 
-export function ErrorState({ 
+// Memoized Error State Component
+export const ErrorState = React.memo(({ 
   error, 
   onRetry, 
   title = 'Something went wrong',
   message 
-}: Props) {
+}: Props) => {
   const { theme } = useTheme();
   const errorMessage = message || error?.message || 'An unexpected error occurred';
 
   return (
-    <View className="flex-1 items-center justify-center p-6">
+    <VStack 
+      className="flex-1 items-center justify-center p-6"
+      accessible={true}
+      accessibilityRole="alert"
+      accessibilityLabel={`Error: ${title}. ${errorMessage}`}
+    >
       <Alert 
         className="w-full max-w-sm"
         style={{ 
@@ -31,18 +37,22 @@ export function ErrorState({
           borderColor: theme.colors.border,
         }}
       >
-        <View className="items-center">
+        <VStack className="items-center" space="md">
           <Heading 
             size="md" 
-            className="mb-2 text-center"
+            className="text-center font-semibold"
             style={{ color: '#EF4444' }}
+            accessibilityRole="heading"
+            accessibilityLevel={2}
           >
             {title}
           </Heading>
           
           <Text 
-            className="mb-4 text-center"
+            className="text-center"
             style={{ color: theme.colors.text.secondary }}
+            accessible={true}
+            accessibilityRole="text"
           >
             {errorMessage}
           </Text>
@@ -57,12 +67,20 @@ export function ErrorState({
                 borderColor: theme.colors.border,
                 backgroundColor: theme.colors.card.background,
               }}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+              accessibilityHint="Double tap to retry the failed action"
             >
-              <Text style={{ color: theme.colors.text.primary }}>Try Again</Text>
+              <ButtonText style={{ color: theme.colors.text.primary }}>
+                Try Again
+              </ButtonText>
             </Button>
           )}
-        </View>
+        </VStack>
       </Alert>
-    </View>
+    </VStack>
   );
-} 
+});
+
+ErrorState.displayName = 'ErrorState'; 

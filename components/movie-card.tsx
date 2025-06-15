@@ -1,12 +1,15 @@
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
+import { VStack } from '@/components/ui/vstack';
 import { useFavorites } from '@/hooks/use-favorites';
 import { useTheme } from '@/hooks/use-theme';
 import { getImageUrl, IMAGE_SIZES } from '@/lib/api-config';
 import type { Movie } from '@/types/movie';
 import { Heart } from 'lucide-react-native';
 import * as React from 'react';
-import { Dimensions, Image, Platform, TouchableOpacity } from 'react-native';
+import { Dimensions, Image, Platform } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 const horizontalPadding = 16; // Total horizontal padding from screen edges
@@ -17,7 +20,140 @@ type Props = {
   onPress: (movieId: number) => void;
 };
 
-export function MovieCard({ movie, onPress }: Props) {
+// Memoized Rating Badge Component
+const RatingBadge = React.memo(({ 
+  rating, 
+  theme 
+}: { 
+  rating: number; 
+  theme: any;
+}) => (
+  <View 
+    className="absolute top-3 right-3 rounded-full px-2 py-1 shadow-md"
+    style={{
+      backgroundColor: theme.colors.rating.background,
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+    }}
+    accessible={true}
+    accessibilityRole="text"
+    accessibilityLabel={`Rating: ${rating.toFixed(1)} out of 10`}
+  >
+    <Text 
+      size="xs"
+      className="font-bold"
+      style={{ color: theme.colors.rating.text }}
+    >
+      ⭐ {rating.toFixed(1)}
+    </Text>
+  </View>
+));
+
+RatingBadge.displayName = 'RatingBadge';
+
+// Memoized Favorite Button Component
+const FavoriteButton = React.memo(({ 
+  isFavorite, 
+  onPress, 
+  theme,
+  movieTitle 
+}: { 
+  isFavorite: boolean; 
+  onPress: (e?: any) => void;
+  theme: any;
+  movieTitle: string;
+}) => (
+  <Pressable
+    onPress={onPress}
+    className="absolute top-3 left-3 rounded-full p-2 shadow-md"
+    style={{
+      backgroundColor: theme.mode === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)',
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+    }}
+    accessible={true}
+    accessibilityRole="button"
+    accessibilityLabel={isFavorite ? `Remove ${movieTitle} from favorites` : `Add ${movieTitle} to favorites`}
+    accessibilityHint={isFavorite ? "Double tap to remove from favorites" : "Double tap to add to favorites"}
+  >
+    <Heart
+      size={18}
+      color={isFavorite ? '#ef4444' : theme.colors.text.secondary}
+      fill={isFavorite ? '#ef4444' : 'transparent'}
+    />
+  </Pressable>
+));
+
+FavoriteButton.displayName = 'FavoriteButton';
+
+// Memoized Movie Poster Component
+const MoviePoster = React.memo(({ 
+  imageUri, 
+  movieTitle, 
+  theme 
+}: { 
+  imageUri: string | null; 
+  movieTitle: string;
+  theme: any;
+}) => (
+  <View className="relative">
+    {imageUri ? (
+      <Image
+        source={{ uri: imageUri }}
+        className="w-full rounded-t-2xl"
+        style={{ 
+          height: 140, 
+          backgroundColor: theme.colors.placeholder.background
+        }}
+        resizeMode="cover"
+        accessible={true}
+        accessibilityRole="image"
+        accessibilityLabel={`${movieTitle} movie poster`}
+      />
+    ) : (
+      <VStack 
+        className="w-full rounded-t-2xl justify-center items-center border-2 border-dashed"
+        style={{ 
+          height: 140, 
+          backgroundColor: theme.colors.placeholder.background,
+          borderColor: theme.colors.border
+        }}
+      >
+        <Text className="text-5xl mb-2">🎬</Text>
+        <Text 
+          size="xs"
+          className="text-center font-medium"
+          style={{ color: theme.colors.placeholder.text }}
+        >
+          No Image
+        </Text>
+      </VStack>
+    )}
+  </View>
+));
+
+MoviePoster.displayName = 'MoviePoster';
+
+// Memoized Movie Card Component
+export const MovieCard = React.memo(({ movie, onPress }: Props) => {
   const { theme } = useTheme();
   const { toggleFavorite, isFavorite } = useFavorites();
   const isMovieFavorite = isFavorite(movie.id);
@@ -31,25 +167,26 @@ export function MovieCard({ movie, onPress }: Props) {
     toggleFavorite(movie);
   }, [movie, toggleFavorite]);
 
-  const formatRating = (rating: number): string => {
-    return rating.toFixed(1);
-  };
+  const imageUri = React.useMemo(() => 
+    movie.poster_path 
+      ? getImageUrl(movie.poster_path, IMAGE_SIZES.poster.small)
+      : null,
+    [movie.poster_path]
+  );
 
-  const imageUri = movie.poster_path 
-    ? getImageUrl(movie.poster_path, IMAGE_SIZES.poster.small)
-    : null;
+  const releaseYear = React.useMemo(() => 
+    new Date(movie.release_date).getFullYear(),
+    [movie.release_date]
+  );
 
   return (
-    <TouchableOpacity 
+    <Pressable 
       testID={`movie-card-${movie.id}`}
       onPress={handlePress}
+      className="mb-4 rounded-2xl border overflow-hidden shadow-lg"
       style={{
         width: cardWidth,
-        marginBottom: 16,
         backgroundColor: theme.colors.card.background,
-        borderRadius: 16,
-        overflow: 'hidden',
-        borderWidth: 1,
         borderColor: theme.colors.card.border,
         // Enhanced shadow for better visibility
         ...Platform.select({
@@ -64,180 +201,95 @@ export function MovieCard({ movie, onPress }: Props) {
           },
         }),
       }}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`${movie.title} movie card`}
+      accessibilityHint="Double tap to view movie details"
     >
       {/* Movie Poster */}
-      <View style={{ position: 'relative' }}>
-        {imageUri ? (
-          <Image
-            testID={`movie-poster-${movie.id}`}
-            source={{ uri: imageUri }}
-            style={{ 
-              width: '100%', 
-              height: 140, 
-              backgroundColor: theme.colors.placeholder.background
-            }}
-            resizeMode="cover"
-          />
-        ) : (
-          <View 
-            testID={`movie-poster-placeholder-${movie.id}`}
-            style={{ 
-              width: '100%', 
-              height: 140, 
-              backgroundColor: theme.colors.placeholder.background,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 2,
-              borderColor: theme.colors.border,
-              borderStyle: 'dashed'
-            }}
-          >
-            <Text style={{ fontSize: 48, marginBottom: 8 }}>🎬</Text>
-            <Text 
-              testID={`movie-no-image-text-${movie.id}`}
-              style={{ 
-                fontSize: 12, 
-                color: theme.colors.placeholder.text, 
-                textAlign: 'center', 
-                fontWeight: '500' 
-              }}
-            >
-              No Image
-            </Text>
-          </View>
-        )}
+      <View className="relative">
+        <MoviePoster 
+          imageUri={imageUri} 
+          movieTitle={movie.title}
+          theme={theme}
+        />
         
         {/* Favorite Button */}
-        <TouchableOpacity
-          testID={`favorite-button-${movie.id}`}
+        <FavoriteButton 
+          isFavorite={isMovieFavorite}
           onPress={handleFavoritePress}
-          style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            backgroundColor: theme.mode === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)',
-            borderRadius: 20,
-            padding: 8,
-            ...Platform.select({
-              ios: {
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
-              },
-              android: {
-                elevation: 6,
-              },
-            }),
-          }}
-        >
-          <Heart
-            size={18}
-            color={isMovieFavorite ? '#ef4444' : theme.colors.text.secondary}
-            fill={isMovieFavorite ? '#ef4444' : 'transparent'}
-          />
-        </TouchableOpacity>
+          theme={theme}
+          movieTitle={movie.title}
+        />
         
         {/* Rating Badge */}
-        <View 
-          testID={`rating-badge-${movie.id}`}
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            backgroundColor: theme.colors.rating.background,
-            borderRadius: 20,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            ...Platform.select({
-              ios: {
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
-              },
-              android: {
-                elevation: 6,
-              },
-            }),
-          }}
-        >
-          <Text 
-            testID={`rating-text-${movie.id}`}
-            style={{ 
-              color: theme.colors.rating.text, 
-              fontSize: 12, 
-              fontWeight: 'bold' 
-            }}
-          >
-            ⭐ {formatRating(movie.vote_average)}
-          </Text>
-        </View>
+        <RatingBadge 
+          rating={movie.vote_average}
+          theme={theme}
+        />
       </View>
 
       {/* Movie Info */}
-      <View style={{ padding: 16 }}>
+      <VStack className="p-4" space="sm">
         <Text 
           testID={`movie-title-${movie.id}`}
-          style={{ 
-            fontSize: 18, 
-            fontWeight: 'bold', 
-            color: theme.colors.text.primary, 
-            lineHeight: 22,
-            marginBottom: 8 
-          }}
+          size="md"
+          className="font-bold leading-5"
+          style={{ color: theme.colors.text.primary }}
           numberOfLines={2}
+          accessible={true}
+          accessibilityRole="text"
         >
           {movie.title}
         </Text>
         
-        <Text 
-          testID={`movie-year-${movie.id}`}
-          style={{ 
-            fontSize: 12, 
-            color: theme.colors.text.secondary, 
-            fontWeight: '500',
-            marginBottom: 8 
-          }}
-        >
-          📅 {movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown'}
-        </Text>
-        
-        <View 
-          testID={`popular-badge-${movie.id}`}
-          style={{
-            backgroundColor: theme.colors.badge.background,
-            borderRadius: 20,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            alignSelf: 'flex-start',
-            marginBottom: 12
-          }}
-        >
+        <HStack className="items-center justify-between">
           <Text 
-            testID={`popular-text-${movie.id}`}
-            style={{ 
-              color: theme.colors.badge.text, 
-              fontSize: 12, 
-              fontWeight: '600' 
-            }}
+            testID={`movie-year-${movie.id}`}
+            size="xs"
+            className="font-medium"
+            style={{ color: theme.colors.text.secondary }}
+            accessible={true}
+            accessibilityRole="text"
+            accessibilityLabel={`Release year: ${releaseYear}`}
           >
-            POPULAR
+            {releaseYear}
           </Text>
-        </View>
+          
+          <View 
+            testID={`popularity-badge-${movie.id}`}
+            className="rounded-full px-2 py-1"
+            style={{ backgroundColor: theme.colors.primary }}
+          >
+            <Text 
+              size="xs"
+              className="font-bold"
+              style={{ 
+                color: theme.mode === 'dark' ? theme.colors.background : theme.colors.surface 
+              }}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={`Popularity score: ${Math.round(movie.popularity)}`}
+            >
+              🔥 {Math.round(movie.popularity)}
+            </Text>
+          </View>
+        </HStack>
         
         <Text 
           testID={`movie-overview-${movie.id}`}
-          style={{ 
-            fontSize: 12, 
-            color: theme.colors.text.tertiary, 
-            lineHeight: 18 
-          }}
+          size="xs"
+          className="leading-4"
+          style={{ color: theme.colors.text.tertiary }}
           numberOfLines={3}
+          accessible={true}
+          accessibilityRole="text"
         >
-          {movie.overview}
+          {movie.overview || 'No description available.'}
         </Text>
-      </View>
-    </TouchableOpacity>
+      </VStack>
+    </Pressable>
   );
-} 
+});
+
+MovieCard.displayName = 'MovieCard'; 

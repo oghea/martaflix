@@ -1,67 +1,120 @@
-import { View } from '@/components/ui/view';
+import { HStack } from '@/components/ui/hstack';
+import { ScrollView } from '@/components/ui/scroll-view';
+import { Skeleton } from '@/components/ui/skeleton';
+import { VStack } from '@/components/ui/vstack';
 import { useTheme } from '@/hooks/use-theme';
 import * as React from 'react';
-import { Dimensions, ScrollView } from 'react-native';
+import { Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
-export function MovieDetailSkeleton() {
+// Memoized Skeleton Box Component
+const SkeletonBox = React.memo(({ 
+  width, 
+  height, 
+  className,
+  style 
+}: { 
+  width: number | string; 
+  height: number; 
+  className?: string;
+  style?: any;
+}) => (
+  <Skeleton 
+    className={`rounded-lg ${className || ''}`}
+    style={{
+      width,
+      height,
+      ...style,
+    }} 
+  />
+));
+
+SkeletonBox.displayName = 'SkeletonBox';
+
+// Memoized Cast Skeleton Item
+const CastSkeletonItem = React.memo(() => (
+  <VStack className="mr-3" space="xs">
+    <SkeletonBox width={120} height={160} className="rounded-xl" />
+    <SkeletonBox width={120} height={12} />
+    <SkeletonBox width={80} height={10} />
+  </VStack>
+));
+
+CastSkeletonItem.displayName = 'CastSkeletonItem';
+
+// Memoized Movie Detail Skeleton Component
+export const MovieDetailSkeleton = React.memo(() => {
   const { theme } = useTheme();
 
-  const SkeletonBox = ({ width, height, style }: { width: number | string, height: number, style?: any }) => (
-    <View 
-      style={{
-        width,
-        height,
-        backgroundColor: theme.colors.placeholder.background,
-        borderRadius: 8,
-        ...style,
-      }} 
-    />
+  const castSkeletons = React.useMemo(() => 
+    Array.from({ length: 5 }, (_, index) => (
+      <CastSkeletonItem key={index} />
+    )),
+    []
   );
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <ScrollView 
+      className="flex-1"
+      style={{ backgroundColor: theme.colors.background }}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading movie details"
+    >
       {/* Backdrop Skeleton */}
-      <SkeletonBox width="100%" height={250} style={{ borderRadius: 0 }} />
+      <SkeletonBox width="100%" height={250} className="rounded-none" />
       
-      <View style={{ padding: 16 }}>
+      <VStack className="p-4" space="lg">
         {/* Title and Rating */}
-        <SkeletonBox width="80%" height={28} style={{ marginBottom: 8 }} />
-        <SkeletonBox width="40%" height={20} style={{ marginBottom: 16 }} />
+        <VStack space="sm">
+          <SkeletonBox width="80%" height={28} />
+          <SkeletonBox width="40%" height={20} />
+        </VStack>
         
         {/* Genres */}
-        <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-          <SkeletonBox width={80} height={24} style={{ marginRight: 8 }} />
-          <SkeletonBox width={90} height={24} style={{ marginRight: 8 }} />
-          <SkeletonBox width={70} height={24} />
-        </View>
+        <HStack space="sm">
+          <SkeletonBox width={80} height={24} className="rounded-full" />
+          <SkeletonBox width={90} height={24} className="rounded-full" />
+          <SkeletonBox width={70} height={24} className="rounded-full" />
+        </HStack>
         
         {/* Overview */}
-        <SkeletonBox width="20%" height={20} style={{ marginBottom: 8 }} />
-        <SkeletonBox width="100%" height={16} style={{ marginBottom: 4 }} />
-        <SkeletonBox width="100%" height={16} style={{ marginBottom: 4 }} />
-        <SkeletonBox width="70%" height={16} style={{ marginBottom: 16 }} />
+        <VStack space="sm">
+          <SkeletonBox width="20%" height={20} />
+          <VStack space="xs">
+            <SkeletonBox width="100%" height={16} />
+            <SkeletonBox width="100%" height={16} />
+            <SkeletonBox width="70%" height={16} />
+          </VStack>
+        </VStack>
         
         {/* Movie Info */}
-        <SkeletonBox width="30%" height={20} style={{ marginBottom: 8 }} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
-          <SkeletonBox width="45%" height={60} />
-          <SkeletonBox width="45%" height={60} />
-        </View>
+        <VStack space="sm">
+          <SkeletonBox width="30%" height={20} />
+          <HStack className="justify-between" space="sm">
+            <SkeletonBox width="45%" height={60} className="rounded-xl" />
+            <SkeletonBox width="45%" height={60} className="rounded-xl" />
+          </HStack>
+        </VStack>
         
         {/* Cast Section */}
-        <SkeletonBox width="20%" height={20} style={{ marginBottom: 12 }} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {Array.from({ length: 5 }).map((_, index) => (
-            <View key={index} style={{ marginRight: 12 }}>
-              <SkeletonBox width={120} height={160} style={{ marginBottom: 8 }} />
-              <SkeletonBox width={120} height={12} style={{ marginBottom: 4 }} />
-              <SkeletonBox width={80} height={10} />
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+        <VStack space="sm">
+          <SkeletonBox width="20%" height={20} />
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 16 }}
+            accessible={true}
+            accessibilityRole="list"
+            accessibilityLabel="Loading cast information"
+          >
+            {castSkeletons}
+          </ScrollView>
+        </VStack>
+      </VStack>
     </ScrollView>
   );
-} 
+});
+
+MovieDetailSkeleton.displayName = 'MovieDetailSkeleton'; 

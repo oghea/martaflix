@@ -346,7 +346,13 @@ export default function MovieDetailScreen(): React.JSX.Element {
               {posterUri ? (
                 <Image
                   source={{ uri: posterUri }}
-                  className="w-30 h-44 rounded-xl border-4 border-white"
+                  style={{
+                    width: 120,
+                    height: 180,
+                    borderRadius: 12,
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                  }}
                   resizeMode="cover"
                   accessible={true}
                   accessibilityRole="image"
@@ -354,8 +360,16 @@ export default function MovieDetailScreen(): React.JSX.Element {
                 />
               ) : (
                 <View 
-                  className="w-30 h-44 rounded-xl border-4 border-white justify-center items-center"
-                  style={{ backgroundColor: theme.colors.placeholder.background }}
+                  style={{
+                    width: 120,
+                    height: 180,
+                    borderRadius: 12,
+                    backgroundColor: theme.colors.placeholder.background,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                  }}
                 >
                   <Text className="text-3xl">🎬</Text>
                 </View>

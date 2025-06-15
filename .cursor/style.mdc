@@ -11,6 +11,7 @@ alwaysApply: true
 - Avoid unnecessary re-renders by memoizing components and using useMemo and useCallback hooks appropriately.
 - Make sure to use defined colors and fonts in the tailwind config file.
 - Make sure always support dark mode and light mode for styling.
+- For the image component use react native and use style props for sizing.
 
 
 [perfect-styling-example.tsx](mdc:examples/perfect-styling-example.tsx)

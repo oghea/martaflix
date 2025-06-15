@@ -1,43 +1,34 @@
-import { Text } from '@/components/ui/text';
+import { Button, ButtonText } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import * as React from 'react';
-import { Platform, TouchableOpacity } from 'react-native';
 
-export function ThemeToggle() {
+// Memoized Theme Toggle Component
+export const ThemeToggle = React.memo(() => {
   const { theme, toggleTheme, isDarkMode } = useTheme();
 
   return (
-    <TouchableOpacity
+    <Button
       onPress={toggleTheme}
+      variant="outline"
+      size="sm"
+      className="rounded-full px-4 py-2 border shadow-sm"
       style={{
         backgroundColor: theme.colors.card.background,
-        borderRadius: 25,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderWidth: 1,
         borderColor: theme.colors.border,
-        ...Platform.select({
-          ios: {
-            shadowColor: theme.colors.shadow,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-          },
-          android: {
-            elevation: 4,
-          },
-        }),
       }}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
+      accessibilityHint={`Currently in ${isDarkMode ? 'dark' : 'light'} mode. Double tap to toggle theme.`}
     >
-      <Text
-        style={{
-          color: theme.colors.text.primary,
-          fontSize: 14,
-          fontWeight: '600',
-        }}
+      <ButtonText
+        className="font-semibold"
+        style={{ color: theme.colors.text.primary }}
       >
         {isDarkMode ? '☀️ Light' : '🌙 Dark'}
-      </Text>
-    </TouchableOpacity>
+      </ButtonText>
+    </Button>
   );
-} 
+});
+
+ThemeToggle.displayName = 'ThemeToggle'; 
