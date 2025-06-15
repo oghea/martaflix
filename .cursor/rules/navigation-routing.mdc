@@ -1,0 +1,429 @@
+---
+description: Rules for navigation routing
+globs: 
+alwaysApply: false
+---
+# Navigation and Routing Patterns
+
+## Expo Router Architecture
+
+Martaflix uses Expo Router for file-based routing with type-safe navigation.
+
+### Routing Structure
+- [app/_layout.tsx](mdc:app/_layout.tsx) - Root layout with providers
+- [app/(tabs)/](mdc:app/(tabs)/) - Tab-based navigation structure  
+- [app/movie/](mdc:app/movie) - Movie detail screens
+- File-based routing: `app/movie/[id].tsx` for dynamic routes
+
+## File-Based Routing Patterns
+
+### Route Naming Conventions
+- Static routes: `app/profile.tsx` → `/profile`
+- Dynamic routes: `app/movie/[id].tsx` → `/movie/123`
+- Nested routes: `app/(tabs)/index.tsx` → `/` (tab root)
+- Route groups: `app/(auth)/login.tsx` → `/login` (grouped but not in URL)
+
+### Layout Components
+```tsx
+// app/_layout.tsx - Root layout
+import { Stack } from 'expo-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@/components/theme-provider';
+
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="movie" />
+        </Stack>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+### Tab Navigation Layout
+```tsx
+// app/(tabs)/_layout.tsx
+import { Tabs } from 'expo-router';
+import { Heart, Home, Search } from 'lucide-react-native';
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: 'white',
+          borderTopColor: '#e5e7eb',
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <Home color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color, size }) => (
+            <Search color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favorites',
+          tabBarIcon: ({ color, size }) => (
+            <Heart color={color} size={size} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
+```
+
+## Navigation Patterns
+
+### Programmatic Navigation
+```tsx
+import { useRouter } from 'expo-router';
+
+export function MovieCard({ movie }: { movie: Movie }) {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push(`/movie/${movie.id}`);
+  };
+
+  return (
+    <Pressable onPress={handlePress}>
+      {/* Movie card content */}
+    </Pressable>
+  );
+}
+```
+
+### Navigation with Parameters
+```tsx
+// app/movie/[id].tsx
+import { useLocalSearchParams } from 'expo-router';
+
+export default function MovieDetails() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  
+  const { data: movie, isLoading } = useMovieDetails(Number(id));
+
+  if (isLoading) return <MovieDetailSkeleton />;
+  
+  return <MovieDetailView movie={movie} />;
+}
+```
+
+### Back Navigation
+```tsx
+import { useRouter } from 'expo-router';
+
+export function BackButton() {
+  const router = useRouter();
+
+  return (
+    <Pressable 
+      onPress={() => router.back()}
+      className="p-2 rounded-full bg-black/20"
+    >
+      <ArrowLeft color="white" size={24} />
+    </Pressable>
+  );
+}
+```
+
+## Screen Layout Patterns
+
+### Screen Wrapper Component
+```tsx
+import { SafeAreaView, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type ScreenProps = {
+  children: React.ReactNode;
+  statusBarStyle?: 'light' | 'dark';
+  backgroundColor?: string;
+};
+
+export function Screen({ 
+  children, 
+  statusBarStyle = 'dark',
+  backgroundColor = 'white' 
+}: ScreenProps) {
+  return (
+    <>
+      <StatusBar barStyle={`${statusBarStyle}-content`} />
+      <SafeAreaView 
+        style={{ flex: 1, backgroundColor }}
+        className="bg-white dark:bg-gray-900"
+      >
+        {children}
+      </SafeAreaView>
+    </>
+  );
+}
+```
+
+### Header Components
+```tsx
+export function ScreenHeader({ 
+  title, 
+  showBack = false, 
+  rightComponent 
+}: {
+  title: string;
+  showBack?: boolean;
+  rightComponent?: React.ReactNode;
+}) {
+  const router = useRouter();
+
+  return (
+    <View className="flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+      <View className="flex-row items-center">
+        {showBack && (
+          <Pressable 
+            onPress={() => router.back()}
+            className="mr-3 p-2 -ml-2"
+          >
+            <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
+          </Pressable>
+        )}
+        <Text className="text-xl font-semibold text-gray-900 dark:text-white">
+          {title}
+        </Text>
+      </View>
+      {rightComponent}
+    </View>
+  );
+}
+```
+
+## Route Parameters and Types
+
+### Type-Safe Route Parameters
+```tsx
+// types/navigation.ts
+export type RootStackParamList = {
+  '(tabs)': undefined;
+  'movie/[id]': { id: string };
+  'search': { query?: string };
+};
+
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}
+```
+
+### Using Typed Parameters
+```tsx
+import { useLocalSearchParams } from 'expo-router';
+
+export default function MovieScreen() {
+  const params = useLocalSearchParams<{ id: string }>();
+  
+  // TypeScript knows params.id is a string
+  const movieId = Number(params.id);
+  
+  return <MovieDetails movieId={movieId} />;
+}
+```
+
+## Deep Linking Patterns
+
+### Link Component Usage
+```tsx
+import { Link } from 'expo-router';
+
+export function MovieCard({ movie }: { movie: Movie }) {
+  return (
+    <Link href={`/movie/${movie.id}`} asChild>
+      <Pressable className="rounded-lg overflow-hidden">
+        <Image source={{ uri: movie.poster_url }} />
+        <Text>{movie.title}</Text>
+      </Pressable>
+    </Link>
+  );
+}
+```
+
+### Custom Link Wrapper
+```tsx
+import { Link, LinkProps } from 'expo-router';
+
+type AppLinkProps = LinkProps<string> & {
+  children: React.ReactNode;
+  disabled?: boolean;
+};
+
+export function AppLink({ disabled, children, ...props }: AppLinkProps) {
+  if (disabled) {
+    return <View>{children}</View>;
+  }
+
+  return (
+    <Link {...props} asChild>
+      {children}
+    </Link>
+  );
+}
+```
+
+## Navigation State Management
+
+### Navigation-Aware Components
+```tsx
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+
+export function FavoritesScreen() {
+  const { refetch } = useFavorites();
+
+  // Refetch favorites when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
+  return <FavoritesList />;
+}
+```
+
+### Route-Based Data Fetching
+```tsx
+export function useMovieDetails(movieId: number) {
+  return useQuery({
+    queryKey: ['movie', movieId],
+    queryFn: () => fetchMovieDetails(movieId),
+    enabled: !!movieId, // Only fetch when movieId is available
+    staleTime: 30 * 60 * 1000, // 30 minutes
+  });
+}
+```
+
+## Screen Options and Configuration
+
+### Dynamic Screen Options
+```tsx
+// app/movie/[id].tsx
+import { Stack } from 'expo-router';
+
+export default function MovieDetailsScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: movie } = useMovieDetails(Number(id));
+
+  return (
+    <>
+      <Stack.Screen 
+        options={{
+          title: movie?.title || 'Movie Details',
+          headerShown: true,
+          headerStyle: { backgroundColor: 'transparent' },
+          headerTintColor: 'white',
+        }}
+      />
+      <MovieDetailsContent movie={movie} />
+    </>
+  );
+}
+```
+
+### Tab Bar Customization
+```tsx
+// Conditional tab bar visibility
+export function useTabBarVisibility() {
+  const segments = useSegments();
+  
+  // Hide tab bar on movie detail screens
+  const shouldHideTabBar = segments.includes('movie');
+  
+  return { shouldHideTabBar };
+}
+```
+
+## Error Handling in Navigation
+
+### Route Error Boundaries
+```tsx
+// app/_layout.tsx
+export function ErrorBoundary({ error }: { error: Error }) {
+  return (
+    <View className="flex-1 justify-center items-center p-4">
+      <Text className="text-lg font-semibold mb-2">Something went wrong</Text>
+      <Text className="text-gray-600 text-center mb-4">{error.message}</Text>
+      <Button 
+        onPress={() => router.replace('/')}
+        title="Go Home"
+      />
+    </View>
+  );
+}
+```
+
+### Invalid Route Handling
+```tsx
+// app/movie/[id].tsx
+export default function MovieScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const movieId = Number(id);
+  
+  // Handle invalid ID
+  if (isNaN(movieId) || movieId <= 0) {
+    return <InvalidMovieScreen />;
+  }
+
+  return <MovieDetailsScreen movieId={movieId} />;
+}
+```
+
+## Performance Optimization
+
+### Lazy Loading Screens
+```tsx
+import { lazy } from 'react';
+
+const MovieDetailsScreen = lazy(() => import('./movie-details'));
+
+export default function MovieScreen() {
+  return (
+    <Suspense fallback={<MovieDetailSkeleton />}>
+      <MovieDetailsScreen />
+    </Suspense>
+  );
+}
+```
+
+### Navigation Preloading
+```tsx
+export function useNavigationPreload() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const preloadMovieDetails = useCallback((movieId: number) => {
+    queryClient.prefetchQuery({
+      queryKey: ['movie', movieId],
+      queryFn: () => fetchMovieDetails(movieId),
+    });
+  }, [queryClient]);
+
+  return { preloadMovieDetails };
+}
+```

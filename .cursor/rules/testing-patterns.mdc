@@ -1,0 +1,419 @@
+---
+description: Rules when creating a testing
+globs: 
+alwaysApply: false
+---
+# Testing Patterns
+
+## Testing Architecture
+
+Martaflix uses Jest with React Native Testing Library for comprehensive unit and integration testing.
+
+### Testing Configuration
+- [jest.config.js](mdc:jest.config.js) - Jest configuration
+- [jest-setup.js](mdc:jest-setup.js) - Test setup and global mocks
+- Test files: `*.test.tsx` alongside components
+- Test directory: [components/__tests__/](mdc:components/__tests__) and [api/__tests__/](mdc:api/__tests__)
+
+## Testing Rules and Guidelines
+
+### File Naming Convention
+- Test files: `component-name.test.tsx`
+- Place test files alongside the component they test
+- Use descriptive test names that explain the behavior being tested
+
+### What to Test
+
+#### Test These Components
+- Components with complex logic or state management
+- Custom hooks with business logic
+- API integration functions
+- Utility functions with complex logic
+- Components that handle user interactions
+
+#### Don't Test These
+- Simple presentational components that only display data
+- Third-party library wrappers without custom logic
+- Basic prop passing without transformation
+
+## Component Testing Patterns
+
+### Basic Component Test Structure
+```tsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { MovieCard } from '../movie-card';
+import type { Movie } from '@/types/movie';
+
+const mockMovie: Movie = {
+  id: 1,
+  title: 'Test Movie',
+  overview: 'A test movie',
+  poster_path: '/test-poster.jpg',
+  release_date: '2023-01-01',
+  vote_average: 7.5,
+};
+
+describe('MovieCard', () => {
+  it('renders movie title and overview', () => {
+    render(<MovieCard movie={mockMovie} />);
+    
+    expect(screen.getByText('Test Movie')).toBeOnTheScreen();
+    expect(screen.getByText('A test movie')).toBeOnTheScreen();
+  });
+
+  it('calls onPress when card is pressed', () => {
+    const mockOnPress = jest.fn();
+    
+    render(<MovieCard movie={mockMovie} onPress={mockOnPress} />);
+    
+    fireEvent.press(screen.getByTestId('movie-card'));
+    
+    expect(mockOnPress).toHaveBeenCalledWith(mockMovie);
+  });
+});
+```
+
+### Test IDs Pattern
+Use consistent test IDs for components:
+```tsx
+export function MovieCard({ movie, onPress }: MovieCardProps) {
+  return (
+    <Pressable 
+      testID="movie-card"
+      onPress={() => onPress?.(movie)}
+    >
+      <Text testID="movie-title">{movie.title}</Text>
+      <Text testID="movie-overview">{movie.overview}</Text>
+    </Pressable>
+  );
+}
+```
+
+### Testing Components with Navigation
+```tsx
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
+
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+}));
+
+describe('MovieCard with Navigation', () => {
+  const mockPush = jest.fn();
+
+  beforeEach(() => {
+    (useRouter as jest.Mock).mockReturnValue({
+      push: mockPush,
+    });
+  });
+
+  it('navigates to movie details on press', () => {
+    render(<MovieCard movie={mockMovie} />);
+    
+    fireEvent.press(screen.getByTestId('movie-card'));
+    
+    expect(mockPush).toHaveBeenCalledWith(`/movie/${mockMovie.id}`);
+  });
+});
+```
+
+## Hook Testing Patterns
+
+### Testing Custom Hooks
+```tsx
+import { renderHook, act } from '@testing-library/react-native';
+import { useFavorites } from '../use-favorites';
+
+describe('useFavorites', () => {
+  beforeEach(() => {
+    // Clear storage before each test
+    jest.clearAllMocks();
+  });
+
+  it('adds movie to favorites', () => {
+    const { result } = renderHook(() => useFavorites());
+
+    act(() => {
+      result.current.addFavorite(mockMovie);
+    });
+
+    expect(result.current.favorites).toContain(mockMovie);
+    expect(result.current.isFavorite(mockMovie.id)).toBe(true);
+  });
+
+  it('removes movie from favorites', () => {
+    const { result } = renderHook(() => useFavorites());
+
+    // Add first
+    act(() => {
+      result.current.addFavorite(mockMovie);
+    });
+
+    // Then remove
+    act(() => {
+      result.current.removeFavorite(mockMovie.id);
+    });
+
+    expect(result.current.favorites).not.toContain(mockMovie);
+    expect(result.current.isFavorite(mockMovie.id)).toBe(false);
+  });
+});
+```
+
+### Testing Hooks with React Query
+```tsx
+import { renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useMovies } from '../use-movies';
+import * as moviesApi from '@/api/movies';
+
+jest.mock('@/api/movies');
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+};
+
+describe('useMovies', () => {
+  it('fetches movies successfully', async () => {
+    const mockMovies = [mockMovie];
+    (moviesApi.fetchMovies as jest.Mock).mockResolvedValue({
+      results: mockMovies,
+    });
+
+    const { result } = renderHook(() => useMovies(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.movies).toEqual(mockMovies);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('handles fetch error', async () => {
+    (moviesApi.fetchMovies as jest.Mock).mockRejectedValue(
+      new Error('Failed to fetch')
+    );
+
+    const { result } = renderHook(() => useMovies(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.movies).toEqual([]);
+  });
+});
+```
+
+## API Testing Patterns
+
+### Testing API Functions
+```tsx
+import axios from 'axios';
+import { fetchMovies, fetchMovieDetails } from '../movies';
+
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+describe('movies API', () => {
+  beforeEach(() => {
+    mockedAxios.create.mockReturnValue(mockedAxios);
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  describe('fetchMovies', () => {
+    it('fetches popular movies successfully', async () => {
+      const mockResponse = {
+        data: {
+          results: [mockMovie],
+          total_pages: 1,
+        },
+      };
+
+      mockedAxios.get.mockResolvedValue(mockResponse);
+
+      const result = await fetchMovies();
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('/movie/popular', {
+        params: { page: 1 },
+      });
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('handles API error', async () => {
+      mockedAxios.get.mockRejectedValue(new Error('Network error'));
+
+      await expect(fetchMovies()).rejects.toThrow('Failed to fetch movies');
+    });
+  });
+});
+```
+
+## Mocking Patterns
+
+### Common Mocks Setup
+In [jest-setup.js](mdc:jest-setup.js):
+```js
+// Mock React Native modules
+jest.mock('react-native-mmkv', () => ({
+  MMKV: jest.fn(() => ({
+    set: jest.fn(),
+    getString: jest.fn(),
+    delete: jest.fn(),
+  })),
+}));
+
+jest.mock('expo-image', () => ({
+  Image: 'Image',
+}));
+
+jest.mock('lucide-react-native', () => ({
+  Heart: 'Heart',
+  Search: 'Search',
+  Star: 'Star',
+}));
+
+// Mock navigation
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+  }),
+  useLocalSearchParams: () => ({}),
+}));
+```
+
+### Component-Specific Mocks
+```tsx
+// Mock theme hook
+jest.mock('@/hooks/use-theme', () => ({
+  useTheme: () => ({
+    theme: 'light',
+    setTheme: jest.fn(),
+  }),
+}));
+
+// Mock favorites store
+jest.mock('@/hooks/use-favorites', () => ({
+  useFavorites: () => ({
+    favorites: [],
+    addFavorite: jest.fn(),
+    removeFavorite: jest.fn(),
+    isFavorite: jest.fn(() => false),
+  }),
+}));
+```
+
+## Test Utilities
+
+### Custom Render Function
+```tsx
+import { render, RenderOptions } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+interface CustomRenderOptions extends RenderOptions {
+  queryClient?: QueryClient;
+}
+
+export function renderWithProviders(
+  ui: React.ReactElement,
+  { queryClient = createTestQueryClient(), ...options }: CustomRenderOptions = {}
+) {
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+
+  return render(ui, { wrapper: Wrapper, ...options });
+}
+```
+
+## Testing Commands
+
+### Available Scripts
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+
+# Run specific test file
+npm test -- movie-card.test.tsx
+
+# Run tests matching pattern
+npm test -- --testNamePattern="favorites"
+```
+
+## Coverage Guidelines
+
+### Coverage Targets
+- **Statements**: 80%+
+- **Branches**: 75%+
+- **Functions**: 80%+
+- **Lines**: 80%+
+
+### Coverage Exclusions
+Exclude from coverage:
+- Configuration files
+- Mock files
+- Type definitions
+- Simple presentational components
+- Third-party library wrappers
+
+### Coverage Configuration
+In [jest.config.js](mdc:jest.config.js):
+```js
+module.exports = {
+  collectCoverageFrom: [
+    'components/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    'api/**/*.{ts,tsx}',
+    'lib/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/__tests__/**',
+    '!**/node_modules/**',
+  ],
+  coverageThreshold: {
+    global: {
+      statements: 80,
+      branches: 75,
+      functions: 80,
+      lines: 80,
+    },
+  },
+};
+```

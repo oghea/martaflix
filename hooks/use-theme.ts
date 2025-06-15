@@ -1,4 +1,4 @@
-import { useThemeStore } from '@/lib/theme-store';
+import { useThemeStore } from '@/store/theme-store';
 import type { Theme, ThemeMode } from '@/types/theme';
 
 export function useTheme(): {

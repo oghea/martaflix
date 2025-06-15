@@ -1,9 +1,9 @@
+import { STORAGE_KEYS, storageUtils } from '@/lib/storage';
 import type { Theme, ThemeMode } from '@/types/theme';
 import { darkTheme, lightTheme } from '@/types/theme';
 import { Appearance } from 'react-native';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { STORAGE_KEYS, storageUtils } from './storage';
 
 type ThemeState = {
   theme: Theme;

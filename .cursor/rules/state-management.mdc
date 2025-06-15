@@ -1,0 +1,334 @@
+---
+description: Rules for state management
+globs: 
+alwaysApply: false
+---
+# State Management Patterns
+
+## State Management Architecture
+
+Martaflix uses a dual state management approach:
+- **Zustand**: Global client state (theme, favorites, user preferences) - stored in [store/](mdc:store)
+- **React Query**: Server state (API data, caching, synchronization) - used in [hooks/](mdc:hooks)
+
+## Store Directory Structure
+
+```
+├── store/
+│   ├── theme-store.ts         # Theme management with MMKV persistence
+│   ├── favorites-store.ts     # Favorites management with MMKV persistence
+│   └── __tests__/            # Store unit tests
+│       ├── theme-store.test.ts
+│       └── favorites-store.test.ts
+├── hooks/
+│   ├── use-theme.ts          # Theme hook wrapper
+│   ├── use-favorites.ts      # Favorites hook wrapper
+│   └── use-*.ts              # Other custom hooks
+```
+
+## Zustand Store Creation Pattern
+
+### Basic Store Template
+Based on [store/theme-store.ts](mdc:store/theme-store.ts) and [store/favorites-store.ts](mdc:store/favorites-store.ts):
+
+```tsx
+// store/example-store.ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
+
+// Define your state types
+type ExampleState = {
+  items: Item[];
+  isLoading: boolean;
+  selectedItem: Item | null;
+};
+
+// Define your actions
+type ExampleActions = {
+  addItem: (item: Item) => void;
+  removeItem: (id: string) => void;
+  setSelectedItem: (item: Item | null) => void;
+  clearItems: () => void;
+};
+
+// Create the store with persistence
+export const useExampleStore = create<ExampleState & ExampleActions>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      items: [],
+      isLoading: false,
+      selectedItem: null,
+
+      // Actions
+      addItem: (item) =>
+        set((state) => ({
+          items: [...state.items, item],
+        })),
+
+      removeItem: (id) =>
+        set((state) => ({
+          items: state.items.filter((item) => item.id !== id),
+        })),
+
+      setSelectedItem: (item) =>
+        set({ selectedItem: item }),
+
+      clearItems: () =>
+        set({ items: [], selectedItem: null }),
+    }),
+    {
+      name: 'example-store',
+      storage: {
+        getItem: (name) => storage.getString(name) || null,
+        setItem: (name, value) => storage.set(name, value),
+        removeItem: (name) => storage.delete(name),
+      },
+    }
+  )
+);
+```
+
+### Hook Wrapper Pattern
+Always create a hook wrapper in [hooks/](mdc:hooks) for better abstraction:
+
+```tsx
+// hooks/use-example.ts
+import { useExampleStore } from '@/store/example-store';
+import { useCallback } from 'react';
+
+export function useExample() {
+  const store = useExampleStore();
+
+  const addItem = useCallback((item: Item) => {
+    store.addItem(item);
+  }, [store]);
+
+  const removeItem = useCallback((id: string) => {
+    store.removeItem(id);
+  }, [store]);
+
+  return {
+    // State
+    items: store.items,
+    isLoading: store.isLoading,
+    selectedItem: store.selectedItem,
+    
+    // Actions (memoized)
+    addItem,
+    removeItem,
+    setSelectedItem: store.setSelectedItem,
+    clearItems: store.clearItems,
+    
+    // Computed values
+    itemsCount: store.items.length,
+    hasItems: store.items.length > 0,
+  };
+}
+```
+
+## Store Patterns
+
+### Theme Store Pattern
+Based on [store/theme-store.ts](mdc:store/theme-store.ts):
+
+```tsx
+import { useTheme } from '@/hooks/use-theme';
+
+// Access theme in components
+export function ThemedComponent() {
+  const { theme, themeMode, toggleTheme, isDarkMode } = useTheme();
+  
+  return (
+    <View style={{ backgroundColor: theme.colors.background }}>
+      <Text style={{ color: theme.colors.text.primary }}>
+        Current mode: {themeMode}
+      </Text>
+      <Button onPress={toggleTheme}>
+        Switch to {isDarkMode ? 'light' : 'dark'} mode
+      </Button>
+    </View>
+  );
+}
+```
+
+### Favorites Store Pattern
+Based on [store/favorites-store.ts](mdc:store/favorites-store.ts):
+
+```tsx
+import { useFavorites } from '@/hooks/use-favorites';
+
+export function FavoriteButton({ movie }: { movie: Movie }) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const isMovieFavorite = isFavorite(movie.id);
+
+  return (
+    <Pressable onPress={() => toggleFavorite(movie)}>
+      <Heart 
+        color={isMovieFavorite ? 'red' : 'gray'}
+        fill={isMovieFavorite ? 'red' : 'transparent'}
+      />
+    </Pressable>
+  );
+}
+```
+
+## Storage Integration
+
+### MMKV Storage
+For sensitive or frequently accessed data:
+```tsx
+import { storage, STORAGE_KEYS } from '@/lib/storage';
+
+export const mmkvStorage = {
+  getItem: (name: string) => {
+    const value = storage.getString(name);
+    return value ? JSON.parse(value) : null;
+  },
+  setItem: (name: string, value: any) => {
+    storage.set(name, JSON.stringify(value));
+  },
+  removeItem: (name: string) => {
+    storage.delete(name);
+  },
+};
+```
+
+### Zustand Persistence with MMKV
+```tsx
+export const usePersistedStore = create<State & Actions>()(
+  persist(
+    (set, get) => ({
+      // Store implementation
+    }),
+    {
+      name: 'store-name',
+      storage: {
+        getItem: (name) => storage.getString(name) || null,
+        setItem: (name, value) => storage.set(name, value),
+        removeItem: (name) => storage.delete(name),
+      },
+    }
+  )
+);
+```
+
+## Store Testing Patterns
+
+### Store Test Template
+Based on [store/__tests__/favorites-store.test.ts](mdc:store/__tests__/favorites-store.test.ts):
+
+```tsx
+// store/__tests__/example-store.test.ts
+import { renderHook, act } from '@testing-library/react-native';
+import { useExampleStore } from '../example-store';
+
+// Mock storage
+jest.mock('@/lib/storage', () => ({
+  storage: {
+    getString: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+  },
+  STORAGE_KEYS: {
+    EXAMPLE: 'example',
+  },
+}));
+
+describe('useExampleStore', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Reset store state
+    useExampleStore.setState({ items: [], isLoading: false });
+  });
+
+  it('should add item to store', () => {
+    const { result } = renderHook(() => useExampleStore());
+
+    act(() => {
+      result.current.addItem(mockItem);
+    });
+
+    expect(result.current.items).toContain(mockItem);
+  });
+
+  it('should remove item from store', () => {
+    const { result } = renderHook(() => useExampleStore());
+
+    // Add item first
+    act(() => {
+      result.current.addItem(mockItem);
+    });
+
+    // Then remove
+    act(() => {
+      result.current.removeItem(mockItem.id);
+    });
+
+    expect(result.current.items).not.toContain(mockItem);
+  });
+});
+```
+
+## Performance Patterns
+
+### Selector Pattern for Zustand
+```tsx
+// Instead of subscribing to entire store
+const items = useExampleStore((state) => state.items);
+
+// Use specific selectors to prevent unnecessary re-renders
+const itemsCount = useExampleStore((state) => state.items.length);
+const hasItems = useExampleStore((state) => state.items.length > 0);
+```
+
+### Memoized Actions
+```tsx
+export function useExample() {
+  const store = useExampleStore();
+
+  const addItem = useCallback((item: Item) => {
+    store.addItem(item);
+  }, [store]);
+
+  const removeItemById = useCallback((id: string) => {
+    store.removeItem(id);
+  }, [store]);
+
+  return { addItem, removeItemById, ...store };
+}
+```
+
+## State Boundaries
+
+### When to Create a New Store
+- **Domain-specific state**: User preferences, app settings, feature-specific data
+- **Persistent state**: Data that needs to survive app restarts
+- **Global state**: State shared across multiple screens/components
+- **Complex state logic**: State with multiple related actions and computations
+
+### When to Use React Query
+- Server data fetching and caching
+- API request states (loading, error, success)
+- Background data synchronization
+- Optimistic updates
+
+### When to Use Local State (useState)
+- Component-specific UI state
+- Form inputs and validation
+- Temporary state that doesn't need persistence
+- State that doesn't need to be shared
+
+## Store Creation Checklist
+
+When creating a new store:
+
+1. ✅ **Create store file** in `store/[name]-store.ts`
+2. ✅ **Define TypeScript types** for state and actions
+3. ✅ **Implement persistence** with MMKV if needed
+4. ✅ **Create hook wrapper** in `hooks/use-[name].ts`
+5. ✅ **Write unit tests** in `store/__tests__/[name]-store.test.ts`
+6. ✅ **Add proper error handling** and validation
+7. ✅ **Use selectors** to prevent unnecessary re-renders
+8. ✅ **Document the store** purpose and usage

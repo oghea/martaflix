@@ -1,0 +1,344 @@
+---
+description: Rules for styling
+globs: 
+alwaysApply: false
+---
+# Styling and Theming Patterns
+
+## Styling Architecture
+
+Martaflix uses NativeWind (Tailwind CSS for React Native) with Gluestack UI components for a consistent design system.
+
+### Core Styling Files
+- [tailwind.config.js](mdc:tailwind.config.js) - Tailwind configuration with custom theme
+- [global.css](mdc:global.css) - Global styles
+- [components/ui/](mdc:components/ui) - Styled UI components
+- [components/theme-toggle.tsx](mdc:components/theme-toggle.tsx) - Theme switching component
+
+## Theme Configuration
+
+### Color System
+Define consistent colors in [tailwind.config.js](mdc:tailwind.config.js):
+```js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          500: '#3b82f6',
+          900: '#1e3a8a',
+        },
+        gray: {
+          50: '#f9fafb',
+          100: '#f3f4f6',
+          800: '#1f2937',
+          900: '#111827',
+        },
+      },
+    },
+  },
+};
+```
+
+### Dark Mode Support
+All components must support dark mode using the theme system with style props (NOT NativeWind dark: syntax):
+
+```tsx
+import { useTheme } from '@/hooks/use-theme';
+
+// Correct way - using theme system with style props
+export function Card({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+  
+  return (
+    <View
+      className="rounded-lg p-4 shadow-sm border"
+      style={{
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.border,
+      }}
+    >
+      <Text style={{ color: theme.colors.text.primary }}>
+        {children}
+      </Text>
+    </View>
+  );
+}
+```
+
+## Component Styling Patterns
+
+### Base Component Pattern
+Based on [perfect-styling-example.tsx](mdc:examples/perfect-styling-example.tsx):
+
+```tsx
+import { View, Text } from '@/components/ui';
+import { useTheme } from '@/hooks/use-theme';
+
+type CardProps = {
+  children: React.ReactNode;
+  variant?: 'default' | 'outlined';
+  className?: string;
+};
+
+export function Card({ children, variant = 'default', className }: CardProps) {
+  const { theme } = useTheme();
+  
+  return (
+    <View
+      className={`rounded-lg p-4 ${className}`}
+      style={{
+        backgroundColor: variant === 'default' ? theme.colors.card.background : 'transparent',
+        borderColor: variant === 'outlined' ? theme.colors.border : 'transparent',
+        borderWidth: variant === 'outlined' ? 1 : 0,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+```
+
+### Responsive Design
+Use NativeWind's responsive prefixes:
+```tsx
+className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4"
+```
+
+### Interactive States
+```tsx
+export function InteractiveButton({ onPress }: { onPress: () => void }) {
+  const { theme } = useTheme();
+  
+  return (
+    <Pressable
+      onPress={onPress}
+      className="rounded-lg p-3"
+      style={{ backgroundColor: theme.colors.primary }}
+      // Note: React Native doesn't support hover states on mobile
+    >
+      <Text style={{ color: theme.colors.text.primary }}>Press me</Text>
+    </Pressable>
+  );
+}
+```
+
+## Theme Management
+
+### Theme Store Pattern
+Based on [hooks/use-theme.ts](mdc:hooks/use-theme.ts):
+
+```tsx
+import { useTheme } from '@/hooks/use-theme';
+
+// Access theme in components
+export function ThemedComponent() {
+  const { theme, themeMode, toggleTheme, isDarkMode } = useTheme();
+  
+  return (
+    <View style={{ backgroundColor: theme.colors.background }}>
+      <Text style={{ color: theme.colors.text.primary }}>
+        Current mode: {themeMode}
+      </Text>
+      <Button onPress={toggleTheme}>
+        Switch to {isDarkMode ? 'light' : 'dark'} mode
+      </Button>
+    </View>
+  );
+}
+```
+
+### StatusBar Theme Integration
+```tsx
+import { StatusBar } from '@/components/ui/status-bar';
+import { useTheme } from '@/hooks/use-theme';
+
+export function ThemedStatusBar() {
+  const { theme } = useTheme();
+  
+  return (
+    <StatusBar
+      barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+      backgroundColor={theme.colors.background}
+    />
+  );
+}
+```
+
+## Gluestack UI Integration
+
+### Component Extension Pattern
+```tsx
+import { Button as GluestackButton } from '@gluestack-ui/button';
+import { styled } from '@gluestack-ui/nativewind-utils';
+
+const StyledButton = styled(GluestackButton, {
+  base: 'px-4 py-2 rounded-md',
+  variants: {
+    variant: {
+      solid: 'bg-blue-500 text-white',
+      outline: 'border border-blue-500 text-blue-500',
+    },
+  },
+});
+
+export function Button({ variant = 'solid', ...props }: ButtonProps) {
+  return <StyledButton variant={variant} {...props} />;
+}
+```
+
+### Icon Integration
+```tsx
+import { Lucide } from 'lucide-react-native';
+
+export function Icon({ name, size = 24, className }: IconProps) {
+  return (
+    <Lucide
+      name={name}
+      size={size}
+      className={cn('text-gray-600 dark:text-gray-400', className)}
+    />
+  );
+}
+```
+
+## Layout Patterns
+
+### Screen Layout
+```tsx
+export function ScreenLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+      <View className="flex-1 px-4 py-2">
+        {children}
+      </View>
+    </SafeAreaView>
+  );
+}
+```
+
+### List Layouts
+```tsx
+// Grid layout for movie cards
+<FlatList
+  data={movies}
+  numColumns={2}
+  columnWrapperStyle={{ justifyContent: 'space-between' }}
+  ItemSeparatorComponent={() => <View className="h-4" />}
+  contentContainerStyle={{ padding: 16 }}
+  renderItem={({ item }) => (
+    <View className="w-[48%]">
+      <MovieCard movie={item} />
+    </View>
+  )}
+/>
+```
+
+## Animation Patterns
+
+### Reanimated Integration
+```tsx
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming 
+} from 'react-native-reanimated';
+
+export function AnimatedCard({ children }: { children: React.ReactNode }) {
+  const scale = useSharedValue(1);
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  
+  return (
+    <Animated.View 
+      style={animatedStyle}
+      className="rounded-lg bg-white dark:bg-gray-800"
+    >
+      {children}
+    </Animated.View>
+  );
+}
+```
+
+## Performance Considerations
+
+### Style Optimization
+```tsx
+// Pre-compute style objects outside render to avoid recreating on each render
+const getCardStyles = (theme: any) => ({
+  backgroundColor: theme.colors.card.background,
+  borderColor: theme.colors.border,
+  shadowColor: theme.colors.shadow,
+});
+
+export function OptimizedCard() {
+  const { theme } = useTheme();
+  const cardStyles = useMemo(() => getCardStyles(theme), [theme]);
+  
+  return (
+    <View 
+      className="rounded-lg p-4 shadow-sm border"
+      style={cardStyles}
+    />
+  );
+}
+```
+
+### Conditional Rendering
+```tsx
+// Avoid creating unnecessary elements
+{isLoading && <MovieSkeleton />}
+{!isLoading && movies.length === 0 && <EmptyState />}
+{!isLoading && movies.length > 0 && <MovieList movies={movies} />}
+```
+
+## Accessibility Patterns
+
+### Semantic Styling
+```tsx
+<Pressable
+  className="p-4 rounded-lg bg-blue-500"
+  accessibilityRole="button"
+  accessibilityLabel="Add to favorites"
+  accessibilityHint="Double tap to add this movie to your favorites"
+>
+  <Text className="text-white font-medium">Add to Favorites</Text>
+</Pressable>
+```
+
+### Focus Management
+```tsx
+className="focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+```
+
+## Image Styling
+
+### Consistent Image Patterns
+```tsx
+import { Image } from 'expo-image';
+
+export function MoviePoster({ uri, title }: { uri: string; title: string }) {
+  return (
+    <Image
+      source={{ uri }}
+      className="w-full aspect-[2/3] rounded-lg"
+      contentFit="cover"
+      transition={200}
+      alt={`${title} movie poster`}
+    />
+  );
+}
+```
+
+### Placeholder Handling
+```tsx
+<Image
+  source={{ uri: posterUrl }}
+  className="w-full aspect-[2/3] rounded-lg bg-gray-200 dark:bg-gray-700"
+  contentFit="cover"
+  placeholder={require('@/assets/images/movie-placeholder.png')}
+/>
+```

@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Martaflix Project Overview
+
+Martaflix is a React Native movie discovery app built with Expo that integrates with The Movie Database (TMDB) API.
+
+## Project Architecture
+
+This is a modern React Native application with the following structure:
+
+### Core Directories
+- [app/](mdc:app) - Expo Router file-based routing with screens and navigation
+- [components/](mdc:components) - Reusable UI components, including UI primitives in [components/ui/](mdc:components/ui)
+- [api/](mdc:api) - API layer with TMDB integration using Axios and React Query
+- [hooks/](mdc:hooks) - Custom React hooks for data fetching and state management
+- [store/](mdc:store) - Zustand stores for global state management
+- [types/](mdc:types) - TypeScript type definitions, including [movie.ts](mdc:types/movie.ts) and [theme.ts](mdc:types/theme.ts)
+- [lib/](mdc:lib) - Shared utilities and configuration
+- [constants/](mdc:constants) - Global constants and configuration
+
+### Key Files
+- [package.json](mdc:package.json) - Project dependencies and scripts
+- [app.json](mdc:app.json) - Expo configuration
+- [tailwind.config.js](mdc:tailwind.config.js) - Tailwind/NativeWind styling configuration
+- [tsconfig.json](mdc:tsconfig.json) - TypeScript configuration
+
+## Tech Stack Summary
+
+- **Framework**: React Native with Expo (~53.0.11)
+- **Language**: TypeScript with strict configuration
+- **UI Framework**: Gluestack UI components with NativeWind (Tailwind CSS)
+- **Navigation**: Expo Router (file-based routing)
+- **State Management**: Zustand for global state, React Query for server state
+- **Storage**: React Native MMKV for persistent storage
+- **API**: Axios with React Query for TMDB integration
+- **Testing**: Jest with React Native Testing Library
+
+## Core Features
+
+1. **Movie Discovery**: Browse popular/trending movies via TMDB API
+2. **Search**: Real-time movie search with debouncing
+3. **Favorites**: Persistent favorites management with MMKV storage
+4. **Theming**: Dark/Light mode support throughout the app
+5. **Cross-Platform**: iOS, Android, and Web support
+
+## Development Commands
+
+- `npm start` - Start Expo development server
+- `npm run ios` - Run on iOS simulator
+- `npm run android` - Run on Android emulator  
+- `npm run web` - Run on web browser
+- `npm test` - Run unit tests
+- `npm run test:coverage` - Generate test coverage report

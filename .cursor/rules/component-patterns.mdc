@@ -1,0 +1,113 @@
+---
+description: Rules for creating a component
+globs: 
+alwaysApply: false
+---
+# Component Development Patterns
+
+## Component Architecture Rules
+
+### Component Structure Guidelines
+
+1. **Single Responsibility**: Each component should have one clear purpose
+2. **Size Limit**: Components should not exceed 80 lines of code
+3. **Props Interface**: Always define props type at the top of the component
+4. **Named Exports**: Use named exports for all components
+
+### File Naming Conventions
+
+- Use kebab-case for component files: `movie-card.tsx`, `cast-card.tsx`
+- Test files: `component-name.test.tsx`
+- Place in appropriate directories based on scope
+
+### Example Component Structure
+
+Based on [movie-card.tsx](mdc:components/movie-card.tsx), [cast-card.tsx](mdc:components/cast-card.tsx), and [perfect-styling-example.tsx](mdc:examples/perfect-styling-example.tsx):
+
+```tsx
+import * as React from 'react';
+import { View, Text, Pressable } from '@/components/ui';
+import { useTheme } from '@/hooks/use-theme';
+
+type Props = {
+  title: string;
+  onPress?: () => void;
+};
+
+export function MovieCard({ title, onPress }: Props) {
+  const { theme } = useTheme();
+  
+  return (
+    <Pressable 
+      onPress={onPress}
+      className="rounded-lg p-4"
+      style={{ backgroundColor: theme.colors.card.background }}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`Movie: ${title}`}
+    >
+      <Text 
+        className="text-lg font-semibold"
+        style={{ color: theme.colors.text.primary }}
+      >
+        {title}
+      </Text>
+    </Pressable>
+  );
+}
+```
+
+## Component Categories
+
+### UI Components ([components/ui/](mdc:components/ui))
+- Primitive components (Button, Input, Text, View)
+- Should be highly reusable and theme-aware
+- Extend Gluestack UI components with NativeWind styling
+
+### Feature Components ([components/](mdc:components))
+- Business logic components like [movie-card.tsx](mdc:components/movie-card.tsx)
+- Should use UI components for rendering
+- Can contain specific business logic
+
+### State Components
+- Components that manage loading, empty, and error states
+- See [movie-skeleton.tsx](mdc:components/movie-skeleton.tsx), [empty-state.tsx](mdc:components/empty-state.tsx), [error-state.tsx](mdc:components/error-state.tsx)
+
+## Required Patterns
+
+### Theme Support
+All components must support dark/light mode using the theme system with style props:
+```tsx
+import { useTheme } from '@/hooks/use-theme';
+
+export function ThemedComponent() {
+  const { theme } = useTheme();
+  
+  return (
+    <View 
+      className="rounded-lg p-4"
+      style={{ backgroundColor: theme.colors.card.background }}
+    >
+      <Text style={{ color: theme.colors.text.primary }}>
+        Content
+      </Text>
+    </View>
+  );
+}
+```
+
+### Accessibility
+Include accessibility props for screen readers:
+```tsx
+<Pressable 
+  accessibilityRole="button"
+  accessibilityLabel="Movie card"
+  accessibilityHint="Tap to view movie details"
+>
+```
+
+### Loading States
+Provide skeleton components for loading states - see [movie-skeleton.tsx](mdc:components/movie-skeleton.tsx) pattern
+
+### Error Boundaries
+Handle error states gracefully - see [error-state.tsx](mdc:components/error-state.tsx) pattern

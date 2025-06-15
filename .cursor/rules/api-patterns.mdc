@@ -1,0 +1,167 @@
+---
+description: Rules when creating an API
+globs: 
+alwaysApply: false
+---
+# API Development Patterns
+
+## API Layer Architecture
+
+The API layer uses React Query for data fetching and caching, with Axios as the HTTP client.
+
+### File Structure
+- [api/movies.ts](mdc:api/movies.ts) - TMDB API integration
+- [hooks/use-movies.ts](mdc:hooks/use-movies.ts) - Movie listing hook
+- [hooks/use-movie-details.ts](mdc:hooks/use-movie-details.ts) - Movie details hook
+- [hooks/use-debounce.ts](mdc:hooks/use-debounce.ts) - Search debouncing utility
+
+## API Layer Patterns
+
+### Base API Configuration
+```tsx
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://api.themoviedb.org/3',
+  params: {
+    api_key: process.env.EXPO_PUBLIC_TMDB_API_KEY,
+  },
+});
+```
+
+### Error Handling
+All API functions should handle errors gracefully:
+```tsx
+export async function fetchMovies() {
+  try {
+    const response = await api.get('/movie/popular');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch movies:', error);
+    throw new Error('Failed to load movies');
+  }
+}
+```
+
+## React Query Hooks Pattern
+
+### Custom Hook Structure
+Based on [use-movies.ts](mdc:hooks/use-movies.ts):
+
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { fetchMovies } from '@/api/movies';
+
+export function useMovies(query?: string) {
+  return useQuery({
+    queryKey: ['movies', query],
+    queryFn: () => fetchMovies(query),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+}
+```
+
+### Query Key Patterns
+- Use array format: `['movies']`, `['movies', query]`, `['movie', id]`
+- Include relevant parameters that affect the data
+- Keep consistent naming across the app
+
+### Data Transformation
+Transform API responses to match app types:
+```tsx
+import type { Movie, TMDBMovie } from '@/types/movie';
+
+function transformMovie(tmdbMovie: TMDBMovie): Movie {
+  return {
+    id: tmdbMovie.id,
+    title: tmdbMovie.title,
+    overview: tmdbMovie.overview,
+    // ... other transformations
+  };
+}
+```
+
+## Search Implementation
+
+### Debounced Search Pattern
+Use [use-debounce.ts](mdc:hooks/use-debounce.ts) for search functionality:
+
+```tsx
+import { useDebounce } from '@/hooks/use-debounce';
+
+export function useMovieSearch(searchTerm: string) {
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  
+  return useQuery({
+    queryKey: ['movies', 'search', debouncedSearchTerm],
+    queryFn: () => searchMovies(debouncedSearchTerm),
+    enabled: !!debouncedSearchTerm,
+  });
+}
+```
+
+## Cache Configuration
+
+### Stale Time Guidelines
+- Static data (movie details): 30 minutes
+- Dynamic data (popular movies): 5 minutes  
+- Search results: 2 minutes
+- User data: Fresh (no stale time)
+
+### Error Handling in Hooks
+```tsx
+export function useMovies() {
+  const query = useQuery({
+    queryKey: ['movies'],
+    queryFn: fetchMovies,
+    retry: (failureCount, error) => {
+      if (error.response?.status === 404) return false;
+      return failureCount < 3;
+    },
+  });
+
+  return {
+    ...query,
+    movies: query.data?.results || [],
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}
+```
+
+## Type Safety
+
+### API Response Types
+Define types for all API responses in [types/movie.ts](mdc:types/movie.ts):
+
+```tsx
+export type TMDBMovieResponse = {
+  results: TMDBMovie[];
+  total_pages: number;
+  total_results: number;
+};
+
+export type TMDBMovie = {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  // ... other TMDB fields
+};
+```
+
+### Hook Return Types
+Always explicitly type hook returns:
+```tsx
+type UseMoviesReturn = {
+  movies: Movie[];
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => void;
+};
+
+export function useMovies(): UseMoviesReturn {
+  // implementation
+}
+```

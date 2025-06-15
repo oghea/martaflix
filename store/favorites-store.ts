@@ -1,7 +1,7 @@
+import { STORAGE_KEYS, storageUtils } from '@/lib/storage';
 import type { Movie } from '@/types/movie';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { STORAGE_KEYS, storageUtils } from './storage';
 
 type FavoritesState = {
   favorites: Movie[];

@@ -1,4 +1,4 @@
-import { useFavoritesStore } from '@/lib/favorites-store';
+import { useFavoritesStore } from '@/store/favorites-store';
 import type { Movie } from '@/types/movie';
 import { useCallback } from 'react';
 
