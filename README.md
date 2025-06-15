@@ -86,8 +86,19 @@ EXPO_PUBLIC_TMDB_API_KEY=your_actual_api_key_here
 
 ### Running on Different Platforms
 
-- **iOS Simulator**: `npm run ios`
-- **Android Emulator**: `npm run android`
+#### For Device Simulators/Emulators:
+
+1. **Prebuild native projects** (required for simulators):
+   ```bash
+   npx expo prebuild --clean
+   ```
+
+2. **Run on platforms**:
+   - **iOS Simulator**: `npm run ios`
+   - **Android Emulator**: `npm run android`
+
+#### For Development and Testing:
+
 - **Web Browser**: `npm run web`
 - **Physical Device**: Use Expo Go app and scan the QR code
 
@@ -239,8 +250,9 @@ npm run test:coverage
 ```bash
 # Development
 npm start                 # Start Expo development server
-npm run ios              # Run on iOS simulator
-npm run android          # Run on Android emulator
+npx expo prebuild --clean # Generate native projects (required for simulators)
+npm run ios              # Run on iOS simulator (after prebuild)
+npm run android          # Run on Android emulator (after prebuild)
 npm run web              # Run in web browser
 
 # Testing
