@@ -118,7 +118,7 @@ npm run test:coverage
 ## 🏗️ Architectural Choices
 
 ### State Management
-- **Zustand**: Chosen for its simplicity and excellent TypeScript support. Provides clean, minimal boilerplate for global state management.
+- **Zustand**: Chosen for its simplicity and excellent TypeScript support. Provides clean, minimal boilerplate for global state management. Stores are organized in the `store/` directory with MMKV persistence.
 - **React Query**: Used for server state management, providing automatic caching, background updates, and optimistic updates.
 
 ### Navigation
@@ -134,8 +134,15 @@ npm run test:coverage
 
 ### Code Organization
 - **Modular Architecture**: Components are broken down into single-responsibility units
+- **Centralized State Management**: Global stores organized in `store/` directory with corresponding hook wrappers in `hooks/`
 - **Absolute Imports**: Clean import paths using `@/` prefix
 - **Type Safety**: Comprehensive TypeScript types for all data structures
+
+### Store Architecture
+- **Theme Store** (`store/theme-store.ts`): Manages light/dark mode with system theme detection and MMKV persistence
+- **Favorites Store** (`store/favorites-store.ts`): Handles movie favorites with optimistic updates and persistent storage
+- **Hook Wrappers**: Each store has a corresponding hook in `hooks/` for better abstraction (e.g., `useTheme()`, `useFavorites()`)
+- **Testing**: Comprehensive unit tests for all stores in `store/__tests__/`
 
 ## 📋 Assumptions Made
 
@@ -222,10 +229,15 @@ npm run test:coverage
 ├── components/          # Reusable UI components
 │   ├── ui/             # Core UI components (buttons, inputs)
 │   └── *.tsx           # Feature-specific components
-├── hooks/              # Custom React hooks
+├── store/              # Zustand stores for global state management
+│   ├── favorites-store.ts  # Favorites management with MMKV persistence
+│   ├── theme-store.ts     # Theme management with MMKV persistence
+│   └── __tests__/        # Store unit tests
+├── hooks/              # Custom React hooks and store wrappers
 ├── lib/                # Utilities, storage, and configuration
 ├── types/              # TypeScript type definitions
 ├── constants/          # App constants and configuration
+├── examples/           # Perfect styling examples and patterns
 └── assets/             # Images, fonts, and static assets
 ```
 
