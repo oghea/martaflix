@@ -50,6 +50,12 @@ function ThemedApp() {
             headerShown: false,
           }} 
         />
+        <Stack.Screen 
+          name="cast/[id]" 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
       </Stack>
     </>
   );

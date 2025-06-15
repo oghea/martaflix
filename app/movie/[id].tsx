@@ -17,10 +17,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Calendar, Clock, Heart, Star } from 'lucide-react-native';
 import * as React from 'react';
 import {
-  Dimensions,
-  Image,
-  ImageBackground,
-  Platform
+    Dimensions,
+    Image,
+    ImageBackground,
+    Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -101,35 +101,42 @@ const CastList = React.memo(({
 }: { 
   cast: any[]; 
   theme: any;
-}) => (
-  <VStack space="md" className="mb-6">
-    <Heading 
-      size="lg"
-      className="font-bold"
-      style={{ color: theme.colors.text.primary }}
-      accessibilityRole="heading"
-      accessibilityLevel={3}
-    >
-      Cast
-    </Heading>
-    
-    <ScrollView 
-      horizontal 
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingRight: 16 }}
-      accessible={true}
-      accessibilityRole="list"
-      accessibilityLabel="Movie cast list"
-    >
-      {cast.map((castMember) => (
-        <CastCard
-          key={`cast-${castMember.id}`}
-          cast={castMember}
-        />
-      ))}
-    </ScrollView>
-  </VStack>
-));
+}) => {
+  const handleCastPress = React.useCallback((castId: number) => {
+    router.push(`/cast/${castId}` as any);
+  }, []);
+
+  return (
+    <VStack space="md" className="mb-6">
+      <Heading 
+        size="lg"
+        className="font-bold"
+        style={{ color: theme.colors.text.primary }}
+        accessibilityRole="heading"
+        accessibilityLevel={3}
+      >
+        Cast
+      </Heading>
+      
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingRight: 16 }}
+        accessible={true}
+        accessibilityRole="list"
+        accessibilityLabel="Movie cast list"
+      >
+        {cast.map((castMember) => (
+          <CastCard
+            key={`cast-${castMember.id}`}
+            cast={castMember}
+            onPress={handleCastPress}
+          />
+        ))}
+      </ScrollView>
+    </VStack>
+  );
+});
 
 CastList.displayName = 'CastList';
 

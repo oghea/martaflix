@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-config';
-import { MovieCredits, MovieDetails, MoviesResponse } from '@/types/movie';
+import { MovieCredits, MovieDetails, MoviesResponse, Person, PersonCredits } from '@/types/movie';
 
 export async function fetchPopularMovies(page: number = 1): Promise<MoviesResponse> {
   const response = await apiClient.get('/movie/popular', {
@@ -32,5 +32,15 @@ export async function searchMovies(query: string, page: number = 1): Promise<Mov
       page,
     },
   });
+  return response.data;
+}
+
+export async function fetchPersonDetails(personId: number): Promise<Person> {
+  const response = await apiClient.get(`/person/${personId}`);
+  return response.data;
+}
+
+export async function fetchPersonCredits(personId: number): Promise<PersonCredits> {
+  const response = await apiClient.get(`/person/${personId}/movie_credits`);
   return response.data;
 } 

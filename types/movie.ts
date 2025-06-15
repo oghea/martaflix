@@ -97,4 +97,36 @@ export type ApiError = {
   status_code: number;
   status_message: string;
   success: boolean;
+};
+
+export type Person = {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  popularity: number;
+  known_for_department: string;
+  gender: number;
+  adult: boolean;
+  imdb_id: string | null;
+  homepage: string | null;
+  also_known_as: string[];
+};
+
+export type PersonMovieCredit = {
+  id: number;
+  title: string;
+  character: string;
+  release_date: string;
+  poster_path: string | null;
+  vote_average: number;
+  popularity: number;
+};
+
+export type PersonCredits = {
+  cast: PersonMovieCredit[];
+  crew: any[];
 }; 
