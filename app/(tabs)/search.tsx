@@ -84,7 +84,7 @@ export default function SearchScreen() {
       <FlatList
         data={data?.results || []}
         renderItem={renderMovieItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => `search-movie-${item.id}`}
         numColumns={2}
         contentContainerStyle={{
           padding: 16,

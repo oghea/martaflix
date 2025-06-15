@@ -53,9 +53,16 @@ export default function DiscoverScreen(): React.JSX.Element {
     isRefetching,
   } = useInfinitePopularMovies();
 
-  // Flatten all pages into a single array
+  // Flatten all pages into a single array and remove duplicates
   const movies = React.useMemo(() => {
-    return data?.pages.flatMap((page) => page.results) ?? [];
+    const allMovies = data?.pages.flatMap((page) => page.results) ?? [];
+    
+    // Remove duplicates based on movie ID
+    const uniqueMovies = allMovies.filter((movie, index, self) => 
+      index === self.findIndex((m) => m.id === movie.id)
+    );
+    
+    return uniqueMovies;
   }, [data]);
 
   const handleMoviePress = React.useCallback((movieId: number) => {
@@ -91,7 +98,7 @@ export default function DiscoverScreen(): React.JSX.Element {
     [handleMoviePress]
   );
 
-  const keyExtractor = React.useCallback((item: Movie) => item.id.toString(), []);
+  const keyExtractor = React.useCallback((item: Movie) => `movie-${item.id}`, []);
 
   const renderFooter = React.useCallback(() => {
     if (isFetchingNextPage) {

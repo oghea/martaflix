@@ -123,7 +123,7 @@ const CastList = React.memo(({
     >
       {cast.map((castMember) => (
         <CastCard
-          key={castMember.id}
+          key={`cast-${castMember.id}`}
           cast={castMember}
         />
       ))}
@@ -486,7 +486,7 @@ export default function MovieDetailScreen(): React.JSX.Element {
               accessibilityLabel="Movie genres"
             >
               {movie.genres.map((genre) => (
-                <GenreBadge key={genre.id} genre={genre} theme={theme} />
+                <GenreBadge key={`genre-${genre.id}`} genre={genre} theme={theme} />
               ))}
             </View>
           )}

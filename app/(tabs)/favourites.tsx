@@ -50,7 +50,7 @@ export default function FavouritesScreen() {
     [handleMoviePress]
   );
 
-  const keyExtractor = useCallback((item: Movie) => item.id.toString(), []);
+  const keyExtractor = useCallback((item: Movie) => `favorite-movie-${item.id}`, []);
 
   const renderHeader = useCallback(() => (
     <View
